@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +34,7 @@ final class XTProfileHttpServer {
     }
 
     void start() throws IOException {
-        server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
         executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory());
         server.setExecutor(executor);
         server.createContext("/api/state", this::state);
@@ -92,6 +91,10 @@ final class XTProfileHttpServer {
     private void reset(HttpExchange exchange) throws IOException {
         if (!"POST".equals(exchange.getRequestMethod())) {
             methodNotAllowed(exchange, "POST");
+            return;
+        }
+        if (!"1".equals(exchange.getRequestHeaders().getFirst("X-XTProfile"))) {
+            write(exchange, 403, "text/plain; charset=utf-8", "Forbidden".getBytes(StandardCharsets.UTF_8));
             return;
         }
         manager.reset();
