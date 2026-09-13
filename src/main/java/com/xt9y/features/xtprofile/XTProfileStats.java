@@ -37,5 +37,24 @@ final class XTProfileStats {
         return Math.min(nowNs - previousNs, MAX_SAMPLE_NS);
     }
 
+    static long averageNs(long[] values, int count) {
+        if (values == null || values.length == 0 || count <= 0) return 0;
+
+        int limit = Math.min(count, values.length);
+        long total = 0;
+        int samples = 0;
+        for (int i = 0; i < limit; i++) {
+            if (values[i] <= 0) continue;
+            total += values[i];
+            samples++;
+        }
+        return samples == 0 ? 0 : total / samples;
+    }
+
+    static double tpsFromMspt(double mspt) {
+        if (!(mspt > 0.0)) return 20.0;
+        return Math.min(20.0, 1000.0 / mspt);
+    }
+
     private XTProfileStats() {}
 }
