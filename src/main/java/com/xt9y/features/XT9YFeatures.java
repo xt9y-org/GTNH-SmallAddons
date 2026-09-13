@@ -46,7 +46,9 @@ public class XT9YFeatures {
     public void init(FMLInitializationEvent event) {
         WildcardToggleHandler.init();
         WildcardTooltipHandler.init();
-        FMLCommonHandler.instance().bus().register(XTProfileManager.INSTANCE);
+        FMLCommonHandler.instance()
+            .bus()
+            .register(XTProfileManager.INSTANCE);
     }
 
     @Mod.EventHandler
