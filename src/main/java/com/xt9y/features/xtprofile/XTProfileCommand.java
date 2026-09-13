@@ -100,8 +100,10 @@ public final class XTProfileCommand extends CommandBase {
     private static void sendUrl(ICommandSender sender, String url, String prefix) {
         ChatComponentText line = new ChatComponentText(prefix);
         ChatComponentText link = new ChatComponentText(EnumChatFormatting.AQUA + url);
-        link.getChatStyle().setUnderlined(true);
-        link.getChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
+        link.getChatStyle()
+            .setUnderlined(true);
+        link.getChatStyle()
+            .setChatClickEvent(new ClickEvent(ClickEvent.Action.OPEN_URL, url));
         line.appendSibling(link);
         sender.addChatMessage(line);
     }
