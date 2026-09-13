@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XTProfile</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d10;--panel:#11151a;--panel2:#171c22;--line:#28303a;--text:#eef2f6;--muted:#8e9aa7;--good:#6ee7a8;--warn:#ffd166;--bad:#ff7070;--accent:#7cb8ff}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}header{display:flex;gap:18px;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(11,13,16,.94);backdrop-filter:blur(10px);z-index:5}.brand{font-size:18px;font-weight:700}.brand span{color:var(--accent)}.status{display:flex;gap:10px;align-items:center;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:var(--bad)}.dot.on{background:var(--good);box-shadow:0 0 14px var(--good)}button,select{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:7px 9px}button{cursor:pointer}button:hover,select:hover{border-color:#44505d}main{padding:20px;max-width:1800px;margin:auto}.summary{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;margin-bottom:18px}.card,.section{background:var(--panel);border:1px solid var(--line);border-radius:8px}.card{padding:14px}.label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}.value{font-size:22px;margin-top:4px}.section{margin-bottom:14px;overflow:hidden}.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}.section-title{font-weight:700}.tools{display:flex;gap:8px;align-items:center}.table-wrap{overflow:auto;max-height:390px}table{width:100%;border-collapse:collapse;min-width:780px}th,td{text-align:left;padding:9px 12px;border-bottom:1px solid #20262e;vertical-align:top}th{position:sticky;top:0;background:var(--panel2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;z-index:1}tr:last-child td{border-bottom:0}.muted{color:var(--muted)}.good{color:var(--good)}.warn{color:var(--warn)}.bad{color:var(--bad)}.pill{display:inline-block;padding:2px 6px;border:1px solid var(--line);border-radius:99px;margin:1px 3px 1px 0;color:#c8d1da;background:#0d1116}.empty{padding:24px;color:var(--muted);text-align:center}.mono-tight{white-space:nowrap}.footer{color:var(--muted);padding:4px 2px 24px}.lagbar{width:90px;height:5px;background:#252c34;border-radius:4px;overflow:hidden;margin-top:4px}.lagbar>i{display:block;height:100%;background:var(--accent);min-width:1px}.error{display:none;margin-bottom:12px;padding:10px 12px;border:1px solid #6e3030;background:#261313;color:#ffb1b1;border-radius:7px}@media(max-width:900px){.summary{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}.section-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header>
+  <div><div class="brand"><span>XT</span>Profile</div><div class="muted">GTNH AE2 crafting + machine profiler</div></div>
+  <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">connecting</span><button id="reset">reset session</button></div>
+</header>
+<main>
+<div id="error" class="error"></div>
+<section class="summary">
+  <div class="card"><div class="label">active crafts</div><div id="activeCrafts" class="value">—</div></div>
+  <div class="card"><div class="label">machines seen</div><div id="machineCount" class="value">—</div></div>
+  <div class="card"><div class="label">pattern dispatches</div><div id="dispatches" class="value">—</div></div>
+  <div class="card"><div class="label">machine busy time</div><div id="busyTime" class="value">—</div></div>
+  <div class="card"><div class="label">session</div><div id="session" class="value">—</div></div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><div class="section-title">Running crafts / CPUs</div><div class="muted">Live AE2 crafting CPUs currently doing work.</div></div></div>
+  <div id="cpus" class="table-wrap"></div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <div><div class="section-title">Machines</div><div class="muted">Physical targets used by current and observed crafts. Lag is GregTech's native tick timing.</div></div>
+    <div class="tools"><label class="muted" for="machineSort">rank by</label><select id="machineSort"><option value="busy">busy time</option><option value="dispatches">most used</option><option value="average">average lag</option><option value="worst">worst tick</option><option value="share">tick share</option></select></div>
+  </div>
+  <div id="machines" class="table-wrap"></div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><div class="section-title">Craft → machine routes</div><div class="muted">Processing-pattern dispatches observed from each CPU to each target.</div></div></div>
+  <div id="routes" class="table-wrap"></div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><div class="section-title">Recent crafts</div><div class="muted">Completed or cancelled CPUs observed during this profiling session.</div></div></div>
+  <div id="history" class="table-wrap"></div>
+</section>
+<div class="footer">Updates once per second. The HTTP server is bound to 127.0.0.1 only. Use <b>/xt9y profile stop</b> in-game to shut it down.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let state=null;
+const fmtInt=n=>new Intl.NumberFormat().format(n||0);
+function fmtMs(ms){if(!Number.isFinite(ms))return '—';if(ms<1)return (ms*1000).toFixed(1)+' µs';if(ms<1000)return ms.toFixed(ms<10?2:1)+' ms';const s=ms/1000;if(s<60)return s.toFixed(1)+' s';const m=Math.floor(s/60),r=Math.floor(s%60);return m+'m '+r+'s'}
+function fmtNs(ns){if(!Number.isFinite(ns)||ns<=0)return '—';if(ns<1000)return Math.round(ns)+' ns';if(ns<1e6)return (ns/1e3).toFixed(1)+' µs';return (ns/1e6).toFixed(2)+' ms'}
+function text(v){const s=document.createElement('span');s.textContent=v==null?'':String(v);return s}
+function pill(v){const s=document.createElement('span');s.className='pill';s.textContent=v;return s}
+function td(v,cls){const d=document.createElement('td');if(v instanceof Node)d.appendChild(v);else d.textContent=v==null?'':String(v);if(cls)d.className=cls;return d}
+function table(headers,rows){if(!rows.length){const e=document.createElement('div');e.className='empty';e.textContent='nothing observed yet';return e}const t=document.createElement('table'),h=document.createElement('thead'),hr=document.createElement('tr');headers.forEach(x=>{const th=document.createElement('th');th.textContent=x;hr.appendChild(th)});h.appendChild(hr);t.appendChild(h);const b=document.createElement('tbody');rows.forEach(r=>b.appendChild(r));t.appendChild(b);return t}
+function listPills(items){const d=document.createElement('div');(items||[]).forEach(x=>d.appendChild(pill(x)));if(!d.childNodes.length)d.appendChild(text('—'));return d}
+function renderCPUs(s){const rows=(s.cpus||[]).map(c=>{const r=document.createElement('tr');r.append(td(c.output));r.append(td(c.name));r.append(td(fmtMs(c.observedMillis),'mono-tight'));r.append(td(fmtInt(c.dispatches),'mono-tight'));r.append(td(listPills(c.machines)));r.append(td(fmtInt(c.usedBytes),'mono-tight'));r.append(td(fmtInt(c.coProcessors),'mono-tight'));return r});$('cpus').replaceChildren(table(['output','CPU','observed','dispatches','machines','bytes','coprocessors'],rows))}
+function machineScore(m,sort){if(sort==='dispatches')return m.dispatches||0;if(sort==='average')return m.averageTickNs||0;if(sort==='worst')return m.worstTickNs||0;if(sort==='share')return m.tickSharePercent||0;return m.busyMillis||0}
+function renderMachines(s){const sort=$('machineSort').value;const ms=[...(s.machines||[])].sort((a,b)=>machineScore(b,sort)-machineScore(a,sort));const rows=ms.map(m=>{const r=document.createElement('tr');const n=document.createElement('div');n.append(text(m.name));n.append(document.createElement('br'));const small=document.createElement('span');small.className='muted';small.textContent=m.type;n.append(small);r.append(td(n));r.append(td(m.location,'mono-tight'));r.append(td(m.active?'active':'idle',m.active?'good':'muted'));r.append(td(fmtInt(m.dispatches),'mono-tight'));r.append(td(fmtMs(m.busyMillis),'mono-tight'));r.append(td(fmtNs(m.averageTickNs),'mono-tight'));r.append(td(fmtNs(m.worstTickNs),'mono-tight'));const lag=document.createElement('div');const pct=Number(m.tickSharePercent)||0;lag.append(text(pct.toFixed(3)+'%'));const bar=document.createElement('div');bar.className='lagbar';const fill=document.createElement('i');fill.style.width=Math.min(100,pct)+'%';bar.append(fill);lag.append(bar);r.append(td(lag));r.append(td(listPills(m.activeCrafts)));return r});$('machines').replaceChildren(table(['machine','location','state','uses','busy time','avg tick','worst tick','50ms tick','active crafts'],rows))}
+function renderRoutes(s){const rows=(s.routes||[]).map(x=>{const r=document.createElement('tr');r.append(td(x.active?'active':'past',x.active?'good':'muted'));r.append(td(x.cpu));r.append(td(x.pattern));r.append(td(x.machine));r.append(td(fmtInt(x.dispatches),'mono-tight'));r.append(td(fmtMs(x.lastDispatchAgoMillis)+' ago','mono-tight'));return r});$('routes').replaceChildren(table(['state','craft / CPU','pattern output','machine','dispatches','last dispatch'],rows))}
+function renderHistory(s){const rows=(s.history||[]).map(x=>{const r=document.createElement('tr');r.append(td(x.status,x.status==='complete'?'good':'warn'));r.append(td(x.output));r.append(td(x.cpu));r.append(td(fmtMs(x.observedMillis),'mono-tight'));r.append(td(fmtInt(x.dispatches),'mono-tight'));r.append(td(fmtInt(x.machineCount),'mono-tight'));return r});$('history').replaceChildren(table(['status','output','CPU','observed','dispatches','machines'],rows))}
+function render(s){state=s;$('statusDot').classList.toggle('on',!!s.running);$('statusText').textContent=s.running?'profiling live':'stopped';$('activeCrafts').textContent=fmtInt(s.activeCrafts);$('machineCount').textContent=fmtInt(s.machineCount);$('dispatches').textContent=fmtInt(s.totalDispatches);$('busyTime').textContent=fmtMs(s.totalBusyMillis);$('session').textContent=fmtMs(s.sessionMillis);renderCPUs(s);renderMachines(s);renderRoutes(s);renderHistory(s)}
+async function poll(){try{const r=await fetch('/api/state',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);render(await r.json());$('error').style.display='none'}catch(e){$('statusDot').classList.remove('on');$('statusText').textContent='connection lost';$('error').textContent='Dashboard could not read profiler state: '+e;$('error').style.display='block'}}
+$('machineSort').addEventListener('change',()=>state&&renderMachines(state));$('reset').addEventListener('click',async()=>{try{await fetch('/api/reset',{method:'POST',headers:{'X-XTProfile':'1'}});await poll()}catch(e){$('error').textContent='Reset failed: '+e;$('error').style.display='block'}});poll();setInterval(poll,1000);
+</script>
+</body>
+</html>
