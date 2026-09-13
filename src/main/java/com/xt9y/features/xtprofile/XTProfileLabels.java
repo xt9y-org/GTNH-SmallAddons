@@ -22,7 +22,8 @@ final class XTProfileLabels {
         if (stack == null) return "unknown output";
         String name;
         try {
-            name = stack.getChatComponent().getUnformattedText();
+            name = stack.getChatComponent()
+                .getUnformattedText();
         } catch (Throwable ignored) {
             name = stack.toString();
         }
@@ -51,20 +52,28 @@ final class XTProfileLabels {
                 if (name != null && !name.isEmpty()) return name;
             }
         } catch (Throwable ignored) {}
-        return tile.getClass().getSimpleName();
+        return tile.getClass()
+            .getSimpleName();
     }
 
     static String machineType(TileEntity tile) {
         if (tile instanceof IGregTechTileEntity) {
             IMetaTileEntity meta = ((IGregTechTileEntity) tile).getMetaTileEntity();
-            if (meta != null) return meta.getClass().getSimpleName();
+            if (meta != null) return meta.getClass()
+                .getSimpleName();
         }
-        return tile.getClass().getSimpleName();
+        return tile.getClass()
+            .getSimpleName();
     }
 
     static String machineLocation(TileEntity tile) {
         if (tile == null || tile.getWorldObj() == null) return "unknown";
-        return "DIM " + tile.getWorldObj().provider.dimensionId + " · " + tile.xCoord + ", " + tile.yCoord + ", "
+        return "DIM " + tile.getWorldObj().provider.dimensionId
+            + " · "
+            + tile.xCoord
+            + ", "
+            + tile.yCoord
+            + ", "
             + tile.zCoord;
     }
 
