@@ -3,6 +3,7 @@ package com.xt9y.features.mixin.mixins.late;
 import net.minecraft.inventory.InventoryCrafting;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -21,10 +22,24 @@ import appeng.me.cluster.implementations.CraftingCPUCluster;
 @Mixin(value = CraftingCPUCluster.class, remap = false)
 public abstract class MixinCraftingCPUClusterXTProfile {
 
+    @Unique
+    private long xtprofile$logicStartNs;
+
     @Inject(method = "updateCraftingLogic", at = @At("HEAD"))
     private void xtprofile$observe(IGrid grid, IEnergyGrid energyGrid, CraftingGridCache cache, CallbackInfo ci) {
         CraftingCPUCluster cpu = (CraftingCPUCluster) (Object) this;
+        xtprofile$logicStartNs = XTProfileManager.INSTANCE.isRunning() ? System.nanoTime() : 0;
         XTProfileManager.INSTANCE.observeCpu(cpu);
+    }
+
+    @Inject(method = "updateCraftingLogic", at = @At("RETURN"))
+    private void xtprofile$timing(IGrid grid, IEnergyGrid energyGrid, CraftingGridCache cache, CallbackInfo ci) {
+        long started = xtprofile$logicStartNs;
+        xtprofile$logicStartNs = 0;
+        if (started <= 0) return;
+        XTProfileManager.INSTANCE.recordCpuTick(
+            (CraftingCPUCluster) (Object) this,
+            Math.max(0, System.nanoTime() - started));
     }
 
     @Redirect(
@@ -40,7 +55,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
 
         CraftingCPUCluster cpu = (CraftingCPUCluster) (Object) this;
         XTProfileManager.INSTANCE.observeCpu(cpu);
-        XTProfileDispatchContext.begin(cpu);
+        XTProfileDispatchContext.begin(cpu, medium);
         try {
             boolean pushed = medium.pushPattern(pattern, inventory);
             if (pushed && !XTProfileDispatchContext.hasRecordedTarget()) {
