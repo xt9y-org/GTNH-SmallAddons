@@ -96,8 +96,8 @@ public final class XTProfileManager {
         }
     }
 
-    public void recordUnresolvedMedium(
-        CraftingCPUCluster cpu, ICraftingMedium medium, ICraftingPatternDetails pattern) {
+    public void recordUnresolvedMedium(CraftingCPUCluster cpu, ICraftingMedium medium,
+        ICraftingPatternDetails pattern) {
         if (!running || cpu == null || medium == null) return;
 
         long now = System.nanoTime();
@@ -154,7 +154,13 @@ public final class XTProfileManager {
 
     synchronized XTProfileData.Snapshot snapshot() {
         return XTProfileSnapshotBuilder.build(
-            running, startedAtNs, startedAtMillis, totalDispatches, activeCpus.values(), machines, routes.values(),
+            running,
+            startedAtNs,
+            startedAtMillis,
+            totalDispatches,
+            activeCpus.values(),
+            machines,
+            routes.values(),
             history);
     }
 
@@ -168,7 +174,8 @@ public final class XTProfileManager {
         }
 
         String cpuName = cpu.getName();
-        record.name = cpuName == null || cpuName.trim().isEmpty() ? "CPU #" + record.id : cpuName;
+        record.name = cpuName == null || cpuName.trim()
+            .isEmpty() ? "CPU #" + record.id : cpuName;
         record.output = XTProfileLabels.stack(cpu.getFinalMultiOutput());
         record.usedBytes = cpu.getUsedStorage();
         record.coProcessors = cpu.getCoProcessors();
@@ -208,14 +215,15 @@ public final class XTProfileManager {
     }
 
     private XTProfileData.MachineRecord ensureMedium(ICraftingMedium medium, long now) {
-        String id =
-            "medium:" + medium.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(medium));
+        String id = "medium:" + medium.getClass()
+            .getName() + "@" + Integer.toHexString(System.identityHashCode(medium));
         XTProfileData.MachineRecord record = machines.get(id);
         if (record != null) return record;
 
         record = new XTProfileData.MachineRecord();
         record.id = id;
-        record.name = medium.getClass().getSimpleName();
+        record.name = medium.getClass()
+            .getSimpleName();
         record.type = "AE crafting medium";
         record.location = "unresolved target";
         record.lastSampleNs = now;
@@ -249,7 +257,9 @@ public final class XTProfileManager {
 
     private void trimRoutes() {
         while (routes.size() > MAX_ROUTES) {
-            String first = routes.keySet().iterator().next();
+            String first = routes.keySet()
+                .iterator()
+                .next();
             routes.remove(first);
         }
     }
