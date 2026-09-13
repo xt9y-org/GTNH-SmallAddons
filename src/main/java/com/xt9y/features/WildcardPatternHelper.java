@@ -85,14 +85,12 @@ public class WildcardPatternHelper {
                 if (info == null) {
                     resolvedInputs[i] = inputs[i];
                 } else {
-                    ItemStack resolved = GTOreDictUnificator.get(info.prefix, mat, inputs[i].getStackSize());
+                    IAEItemStack resolved = resolveMaterialStack(info, mat, inputs[i].getStackSize());
                     if (resolved == null) {
                         valid = false;
                         break;
                     }
-                    resolvedInputs[i] = AEApi.instance()
-                        .storage()
-                        .createItemStack(resolved);
+                    resolvedInputs[i] = resolved;
                 }
             }
             if (!valid) continue;
@@ -107,14 +105,12 @@ public class WildcardPatternHelper {
                 if (info == null) {
                     resolvedOutputs[i] = outputs[i];
                 } else {
-                    ItemStack resolved = GTOreDictUnificator.get(info.prefix, mat, outputs[i].getStackSize());
+                    IAEItemStack resolved = resolveMaterialStack(info, mat, outputs[i].getStackSize());
                     if (resolved == null) {
                         valid = false;
                         break;
                     }
-                    resolvedOutputs[i] = AEApi.instance()
-                        .storage()
-                        .createItemStack(resolved);
+                    resolvedOutputs[i] = resolved;
                 }
             }
             if (!valid) continue;
@@ -145,6 +141,16 @@ public class WildcardPatternHelper {
         }
 
         return result;
+    }
+
+    private static IAEItemStack resolveMaterialStack(SlotOreInfo info, Materials material, long amount) {
+        ItemStack canonical = GTOreDictUnificator.get(info.prefix, material, 1L);
+        if (canonical == null) return null;
+
+        IAEItemStack resolved = AEApi.instance()
+            .storage()
+            .createItemStack(canonical);
+        return resolved == null ? null : resolved.setStackSize(amount);
     }
 
     public static SlotOreInfo parseOreInfo(ItemStack stack) {
