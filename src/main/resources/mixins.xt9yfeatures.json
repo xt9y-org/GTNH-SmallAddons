@@ -13,7 +13,10 @@
     "MixinCRIBGuiWildcard",
     "MixinMTETieredMachineBlockBaseGui",
     "MixinDualityInterface",
-    "MixinTileInterface"
+    "MixinTileInterface",
+    "MixinCommonBaseMetaTileEntityXTProfile",
+    "MixinCraftingCPUClusterXTProfile",
+    "MixinDualityInterfaceXTProfile"
   ],
   "client": [
     "MixinVirtualMEPhantomSlotNonConsumable",
