@@ -53,7 +53,10 @@ final class XTProfileSnapshotBuilder {
             view.coProcessors = record.coProcessors;
             views.add(view);
         }
-        Collections.sort(views, Comparator.comparingLong((XTProfileData.CpuView view) -> view.dispatches).reversed());
+        Collections.sort(
+            views,
+            Comparator.comparingLong((XTProfileData.CpuView view) -> view.dispatches)
+                .reversed());
         return views;
     }
 
@@ -78,7 +81,9 @@ final class XTProfileSnapshotBuilder {
             views.add(view);
         }
         Collections.sort(
-            views, Comparator.comparingDouble((XTProfileData.MachineView view) -> view.busyMillis).reversed());
+            views,
+            Comparator.comparingDouble((XTProfileData.MachineView view) -> view.busyMillis)
+                .reversed());
         return views;
     }
 
@@ -100,7 +105,10 @@ final class XTProfileSnapshotBuilder {
             view.lastDispatchAgoMillis = millis(Math.max(0, now - record.lastDispatchNs));
             views.add(view);
         }
-        Collections.sort(views, Comparator.comparingLong((XTProfileData.RouteView view) -> view.dispatches).reversed());
+        Collections.sort(
+            views,
+            Comparator.comparingLong((XTProfileData.RouteView view) -> view.dispatches)
+                .reversed());
         return views;
     }
 
