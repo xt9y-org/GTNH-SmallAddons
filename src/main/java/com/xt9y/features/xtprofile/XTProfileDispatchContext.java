@@ -2,6 +2,7 @@ package com.xt9y.features.xtprofile;
 
 import net.minecraft.tileentity.TileEntity;
 
+import appeng.api.networking.crafting.ICraftingMedium;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 
@@ -9,8 +10,8 @@ public final class XTProfileDispatchContext {
 
     private static final ThreadLocal<Context> CURRENT = new ThreadLocal<>();
 
-    public static void begin(CraftingCPUCluster cpu) {
-        CURRENT.set(new Context(cpu));
+    public static void begin(CraftingCPUCluster cpu, ICraftingMedium medium) {
+        CURRENT.set(new Context(cpu, medium));
     }
 
     public static void recordTarget(TileEntity target, ICraftingPatternDetails pattern) {
@@ -18,7 +19,7 @@ public final class XTProfileDispatchContext {
         if (context == null) return;
 
         context.recordedTarget = true;
-        XTProfileManager.INSTANCE.recordTarget(context.cpu, target, pattern);
+        XTProfileManager.INSTANCE.recordTarget(context.cpu, context.medium, target, pattern);
     }
 
     public static boolean hasRecordedTarget() {
@@ -35,10 +36,12 @@ public final class XTProfileDispatchContext {
     private static final class Context {
 
         final CraftingCPUCluster cpu;
+        final ICraftingMedium medium;
         boolean recordedTarget;
 
-        Context(CraftingCPUCluster cpu) {
+        Context(CraftingCPUCluster cpu, ICraftingMedium medium) {
             this.cpu = cpu;
+            this.medium = medium;
         }
     }
 }
