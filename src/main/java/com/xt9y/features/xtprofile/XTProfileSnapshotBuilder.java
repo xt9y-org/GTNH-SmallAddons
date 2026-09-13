@@ -65,7 +65,10 @@ final class XTProfileSnapshotBuilder {
             view.tickSharePercent = view.averageAe2TickNs / IDEAL_TICK_NS * 100.0;
             views.add(view);
         }
-        Collections.sort(views, Comparator.comparingLong((XTProfileData.CpuView view) -> view.dispatches).reversed());
+        Collections.sort(
+            views,
+            Comparator.comparingLong((XTProfileData.CpuView view) -> view.dispatches)
+                .reversed());
         return views;
     }
 
@@ -223,7 +226,10 @@ final class XTProfileSnapshotBuilder {
             view.lastDispatchAgoMillis = millis(Math.max(0, now - record.lastDispatchNs));
             views.add(view);
         }
-        Collections.sort(views, Comparator.comparingLong((XTProfileData.RouteView view) -> view.dispatches).reversed());
+        Collections.sort(
+            views,
+            Comparator.comparingLong((XTProfileData.RouteView view) -> view.dispatches)
+                .reversed());
         return views;
     }
 

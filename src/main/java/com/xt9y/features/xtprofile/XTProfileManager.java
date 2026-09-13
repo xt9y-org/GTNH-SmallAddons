@@ -298,7 +298,8 @@ public final class XTProfileManager {
         }
 
         String cpuName = cpu.getName();
-        record.name = cpuName == null || cpuName.trim().isEmpty() ? "CPU #" + record.id : cpuName;
+        record.name = cpuName == null || cpuName.trim()
+            .isEmpty() ? "CPU #" + record.id : cpuName;
         IAEStack<?> output = cpu.getFinalMultiOutput();
         record.output = XTProfileLabels.stack(output);
         record.outputKey = XTProfileLabels.stackKey(output);
@@ -444,7 +445,9 @@ public final class XTProfileManager {
 
     private void trimRoutes() {
         while (routes.size() > MAX_ROUTES) {
-            String first = routes.keySet().iterator().next();
+            String first = routes.keySet()
+                .iterator()
+                .next();
             routes.remove(first);
         }
     }

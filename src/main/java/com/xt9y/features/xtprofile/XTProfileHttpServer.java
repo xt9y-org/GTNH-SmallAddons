@@ -22,7 +22,8 @@ import com.sun.net.httpserver.HttpServer;
 
 final class XTProfileHttpServer {
 
-    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping().create();
+    private static final Gson GSON = new GsonBuilder().disableHtmlEscaping()
+        .create();
     private static final byte[] DASHBOARD = loadDashboard();
 
     private final XTProfileManager manager;
@@ -86,7 +87,8 @@ final class XTProfileHttpServer {
             methodNotAllowed(exchange, "GET");
             return;
         }
-        byte[] body = GSON.toJson(manager.snapshot()).getBytes(StandardCharsets.UTF_8);
+        byte[] body = GSON.toJson(manager.snapshot())
+            .getBytes(StandardCharsets.UTF_8);
         write(exchange, 200, "application/json; charset=utf-8", body);
     }
 
@@ -95,7 +97,9 @@ final class XTProfileHttpServer {
             methodNotAllowed(exchange, "POST");
             return;
         }
-        if (!"1".equals(exchange.getRequestHeaders().getFirst("X-XTProfile"))) {
+        if (!"1".equals(
+            exchange.getRequestHeaders()
+                .getFirst("X-XTProfile"))) {
             write(exchange, 403, "text/plain; charset=utf-8", "Forbidden".getBytes(StandardCharsets.UTF_8));
             return;
         }
@@ -108,7 +112,10 @@ final class XTProfileHttpServer {
             methodNotAllowed(exchange, "GET");
             return;
         }
-        String name = queryValue(exchange.getRequestURI().getRawQuery(), "name");
+        String name = queryValue(
+            exchange.getRequestURI()
+                .getRawQuery(),
+            "name");
         byte[] icon = loadIcon(name);
         if (icon == null) {
             write(exchange, 404, "text/plain; charset=utf-8", "Not Found".getBytes(StandardCharsets.UTF_8));
@@ -160,7 +167,8 @@ final class XTProfileHttpServer {
     }
 
     private static void methodNotAllowed(HttpExchange exchange, String allow) throws IOException {
-        exchange.getResponseHeaders().set("Allow", allow);
+        exchange.getResponseHeaders()
+            .set("Allow", allow);
         write(exchange, 405, "text/plain; charset=utf-8", "Method Not Allowed".getBytes(StandardCharsets.UTF_8));
     }
 
@@ -205,7 +213,9 @@ final class XTProfileHttpServer {
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            if (!"GET".equals(exchange.getRequestMethod()) || !"/".equals(exchange.getRequestURI().getPath())) {
+            if (!"GET".equals(exchange.getRequestMethod()) || !"/".equals(
+                exchange.getRequestURI()
+                    .getPath())) {
                 write(exchange, 404, "text/plain; charset=utf-8", "Not Found".getBytes(StandardCharsets.UTF_8));
                 return;
             }

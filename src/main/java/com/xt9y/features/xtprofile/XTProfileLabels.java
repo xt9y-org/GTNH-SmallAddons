@@ -69,8 +69,13 @@ final class XTProfileLabels {
         }
 
         String name = stackName(stack);
-        String type = stack.getClass().getName();
-        String key = "stack:" + type + ":" + Integer.toHexString(stack.toString().hashCode());
+        String type = stack.getClass()
+            .getName();
+        String key = "stack:" + type
+            + ":"
+            + Integer.toHexString(
+                stack.toString()
+                    .hashCode());
         return new StackInfo(key, name, type, 0, null, stack.getStackSize());
     }
 
@@ -87,7 +92,8 @@ final class XTProfileLabels {
     static String mediumId(ICraftingMedium medium) {
         TileEntity tile = mediumTile(medium);
         if (tile != null) return "medium:" + tileId(tile);
-        return "medium:" + medium.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(medium));
+        return "medium:" + medium.getClass()
+            .getName() + "@" + Integer.toHexString(System.identityHashCode(medium));
     }
 
     static String mediumName(ICraftingMedium medium) {
@@ -112,11 +118,14 @@ final class XTProfileLabels {
         if (medium instanceof TileEntity) return machineName((TileEntity) medium);
 
         String reflected = reflectiveName(medium);
-        return reflected == null ? medium.getClass().getSimpleName() : reflected;
+        return reflected == null ? medium.getClass()
+            .getSimpleName() : reflected;
     }
 
     static String mediumType(ICraftingMedium medium) {
-        return medium == null ? "unknown" : medium.getClass().getSimpleName();
+        return medium == null ? "unknown"
+            : medium.getClass()
+                .getSimpleName();
     }
 
     static String mediumLocation(ICraftingMedium medium) {
@@ -162,15 +171,18 @@ final class XTProfileLabels {
                 if (name != null && !name.isEmpty()) return name;
             }
         } catch (Throwable ignored) {}
-        return tile.getClass().getSimpleName();
+        return tile.getClass()
+            .getSimpleName();
     }
 
     static String machineType(TileEntity tile) {
         if (tile instanceof IGregTechTileEntity) {
             IMetaTileEntity meta = ((IGregTechTileEntity) tile).getMetaTileEntity();
-            if (meta != null) return meta.getClass().getSimpleName();
+            if (meta != null) return meta.getClass()
+                .getSimpleName();
         }
-        return tile.getClass().getSimpleName();
+        return tile.getClass()
+            .getSimpleName();
     }
 
     static String machineLocation(TileEntity tile) {
@@ -186,7 +198,8 @@ final class XTProfileLabels {
 
     private static String stackName(IAEStack<?> stack) {
         try {
-            return stack.getChatComponent().getUnformattedText();
+            return stack.getChatComponent()
+                .getUnformattedText();
         } catch (Throwable ignored) {
             return stack.toString();
         }
@@ -212,7 +225,8 @@ final class XTProfileLabels {
 
     private static int tagHash(ItemStack stack) {
         try {
-            return stack != null && stack.hasTagCompound() ? stack.getTagCompound().hashCode() : 0;
+            return stack != null && stack.hasTagCompound() ? stack.getTagCompound()
+                .hashCode() : 0;
         } catch (Throwable ignored) {
             return 0;
         }
@@ -222,7 +236,8 @@ final class XTProfileLabels {
         String[] methods = { "getName", "getCustomName", "getLocalName", "getInventoryName" };
         for (String methodName : methods) {
             try {
-                Method method = value.getClass().getMethod(methodName);
+                Method method = value.getClass()
+                    .getMethod(methodName);
                 if (method.getParameterTypes().length != 0) continue;
                 Object result = method.invoke(value);
                 if (result instanceof String) {

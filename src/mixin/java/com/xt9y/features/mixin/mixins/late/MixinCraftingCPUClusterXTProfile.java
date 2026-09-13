@@ -37,9 +37,8 @@ public abstract class MixinCraftingCPUClusterXTProfile {
         long started = xtprofile$logicStartNs;
         xtprofile$logicStartNs = 0;
         if (started <= 0) return;
-        XTProfileManager.INSTANCE.recordCpuTick(
-            (CraftingCPUCluster) (Object) this,
-            Math.max(0, System.nanoTime() - started));
+        XTProfileManager.INSTANCE
+            .recordCpuTick((CraftingCPUCluster) (Object) this, Math.max(0, System.nanoTime() - started));
     }
 
     @Redirect(
