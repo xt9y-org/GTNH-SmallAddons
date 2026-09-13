@@ -1,6 +1,7 @@
 package com.xt9y.features.xtprofile;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -14,12 +15,12 @@ public final class XTProfileCommand extends CommandBase {
 
     @Override
     public String getCommandName() {
-        return "xtprofile";
+        return "xt9y";
     }
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/xtprofile [start|status|reset|stop]";
+        return "/xt9y profile [start|status|reset|stop]";
     }
 
     @Override
@@ -29,7 +30,12 @@ public final class XTProfileCommand extends CommandBase {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
-        String action = args.length == 0 ? "start" : args[0].toLowerCase(java.util.Locale.ROOT);
+        if (args.length == 0 || !"profile".equalsIgnoreCase(args[0]) || args.length > 2) {
+            usage(sender);
+            return;
+        }
+
+        String action = args.length == 1 ? "start" : args[1].toLowerCase(Locale.ROOT);
         switch (action) {
             case "start":
                 start(sender);
@@ -44,8 +50,12 @@ public final class XTProfileCommand extends CommandBase {
                 stop(sender);
                 break;
             default:
-                sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + getCommandUsage(sender)));
+                usage(sender);
         }
+    }
+
+    private void usage(ICommandSender sender) {
+        sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + getCommandUsage(sender)));
     }
 
     private static void start(ICommandSender sender) {
