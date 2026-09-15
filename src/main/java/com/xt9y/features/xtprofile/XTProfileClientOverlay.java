@@ -286,7 +286,8 @@ public final class XTProfileClientOverlay {
     private static String fit(String value, int width, Minecraft mc) {
         String safe = value == null || value.isEmpty() ? "Unnamed crafting medium" : value;
         if (mc.fontRenderer.getStringWidth(safe) <= width) return safe;
-        return mc.fontRenderer.trimStringToWidth(safe, Math.max(0, width - mc.fontRenderer.getStringWidth("..."))) + "...";
+        return mc.fontRenderer.trimStringToWidth(safe, Math.max(0, width - mc.fontRenderer.getStringWidth("...")))
+            + "...";
     }
 
     private static String compact(long value) {
