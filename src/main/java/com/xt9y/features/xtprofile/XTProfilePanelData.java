@@ -14,6 +14,8 @@ final class XTProfilePanelData {
         String item;
         long dispatches;
         double sharePercent;
+        double craftTimeMillis;
+        double tpsUsagePercent;
         boolean hasLocation;
         int dimension;
         int x;
