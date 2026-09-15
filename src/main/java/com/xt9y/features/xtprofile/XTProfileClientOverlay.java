@@ -12,7 +12,6 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.MouseEvent;
@@ -35,9 +34,6 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public final class XTProfileClientOverlay implements INEIGuiHandler {
 
-    private static final ResourceLocation CPU_TEXTURE = new ResourceLocation(
-        "appliedenergistics2",
-        "textures/guis/craftingcpu.png");
     private static final int CPU_WIDTH = 238;
     private static final int CPU_HEIGHT = 184;
     private static final int PANEL_WIDTH = 176;
@@ -51,6 +47,10 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private static final int CPU_BUTTON_ID = -4100;
     private static final int ALL_BUTTON_ID = -4101;
     private static final int ROW_BUTTON_BASE_ID = -4110;
+    private static final int PANEL_BG = 0xFFC6C6C6;
+    private static final int PANEL_HIGHLIGHT = 0xFFFFFFFF;
+    private static final int PANEL_SHADOW = 0xFF555555;
+    private static final int PANEL_BORDER = 0xFF373737;
     private static final int LIST_BG = 0xFFC6C6C6;
     private static final int LIST_BORDER = 0xFF373737;
     private static final int LIST_INNER_BORDER = 0xFFFFFFFF;
@@ -153,7 +153,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         position(event.gui);
         beginPanelRender();
         try {
-            drawBackground(event.gui);
+            drawBackground();
             drawHeader(message);
 
             XTProfilePanelData.View view = currentView(message);
@@ -235,15 +235,20 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
-    private void drawBackground(GuiScreen gui) {
-        Minecraft mc = Minecraft.getMinecraft();
-        mc.getTextureManager()
-            .bindTexture(CPU_TEXTURE);
-        gui.drawTexturedModalRect(panelLeft, panelTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+    private void drawBackground() {
+        int right = panelLeft + PANEL_WIDTH;
+        int bottom = panelTop + PANEL_HEIGHT;
 
-        Gui.drawRect(panelLeft + 6, panelTop + 25, panelLeft + PANEL_WIDTH - 7, panelTop + 173, LIST_BORDER);
-        Gui.drawRect(panelLeft + 7, panelTop + 26, panelLeft + PANEL_WIDTH - 8, panelTop + 172, LIST_INNER_BORDER);
-        Gui.drawRect(panelLeft + 8, panelTop + 27, panelLeft + PANEL_WIDTH - 9, panelTop + 171, LIST_BG);
+        Gui.drawRect(panelLeft, panelTop, right, bottom, PANEL_BORDER);
+        Gui.drawRect(panelLeft + 1, panelTop + 1, right - 1, bottom - 1, PANEL_HIGHLIGHT);
+        Gui.drawRect(panelLeft + 2, panelTop + 2, right - 2, bottom - 2, PANEL_BG);
+
+        Gui.drawRect(right - 3, panelTop + 2, right - 2, bottom - 2, PANEL_SHADOW);
+        Gui.drawRect(panelLeft + 2, bottom - 3, right - 2, bottom - 2, PANEL_SHADOW);
+
+        Gui.drawRect(panelLeft + 6, panelTop + 25, right - 7, panelTop + 173, LIST_BORDER);
+        Gui.drawRect(panelLeft + 7, panelTop + 26, right - 8, panelTop + 172, LIST_INNER_BORDER);
+        Gui.drawRect(panelLeft + 8, panelTop + 27, right - 9, panelTop + 171, LIST_BG);
     }
 
     private void drawHeader(XTProfilePanelMessage message) {
