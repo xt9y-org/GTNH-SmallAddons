@@ -25,8 +25,9 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public final class XTProfileClientOverlay {
 
-    private static final ResourceLocation CPU_TEXTURE =
-        new ResourceLocation("appliedenergistics2", "textures/guis/craftingcpu.png");
+    private static final ResourceLocation CPU_TEXTURE = new ResourceLocation(
+        "appliedenergistics2",
+        "textures/guis/craftingcpu.png");
     private static final int CPU_WIDTH = 238;
     private static final int CPU_HEIGHT = 184;
     private static final int PANEL_WIDTH = 176;
@@ -195,7 +196,10 @@ public final class XTProfileClientOverlay {
         }
 
         if (entries.isEmpty()) {
-            drawCentered(gui, sessionScope ? "No session routes yet" : "No routes for this CPU yet", panelTop + 83,
+            drawCentered(
+                gui,
+                sessionScope ? "No session routes yet" : "No routes for this CPU yet",
+                panelTop + 83,
                 textColor);
         }
 
@@ -224,8 +228,12 @@ public final class XTProfileClientOverlay {
     }
 
     private static void highlight(XTProfilePanelData.Entry entry, Minecraft mc) {
-        NamedDimensionalCoord coord =
-            new NamedDimensionalCoord(entry.x, entry.y, entry.z, entry.dimension, entry.name == null ? "" : entry.name);
+        NamedDimensionalCoord coord = new NamedDimensionalCoord(
+            entry.x,
+            entry.y,
+            entry.z,
+            entry.dimension,
+            entry.name == null ? "" : entry.name);
         Map<NamedDimensionalCoord, String[]> messages = new HashMap<>();
         messages.put(
             coord,
