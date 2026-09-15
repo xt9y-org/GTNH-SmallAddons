@@ -51,6 +51,8 @@ public final class XTProfilePanelMessage implements IMessage {
             ByteBufUtils.writeUTF8String(buf, trim(entry.item));
             buf.writeLong(entry.dispatches);
             buf.writeDouble(entry.sharePercent);
+            buf.writeDouble(entry.craftTimeMillis);
+            buf.writeDouble(entry.tpsUsagePercent);
             buf.writeBoolean(entry.hasLocation);
             buf.writeInt(entry.dimension);
             buf.writeInt(entry.x);
@@ -73,6 +75,8 @@ public final class XTProfilePanelMessage implements IMessage {
             entry.item = ByteBufUtils.readUTF8String(buf);
             entry.dispatches = buf.readLong();
             entry.sharePercent = buf.readDouble();
+            entry.craftTimeMillis = buf.readDouble();
+            entry.tpsUsagePercent = buf.readDouble();
             entry.hasLocation = buf.readBoolean();
             entry.dimension = buf.readInt();
             entry.x = buf.readInt();
