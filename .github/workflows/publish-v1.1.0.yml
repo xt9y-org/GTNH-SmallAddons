@@ -24,7 +24,7 @@ jobs:
           submodules: recursive
 
       - name: Make release version visible to Gradle
-        run: git tag "${RELEASE_VERSION}"
+        run: git tag -f "${RELEASE_VERSION}"
 
       - name: Set up JDK versions
         uses: actions/setup-java@v5
@@ -47,7 +47,7 @@ jobs:
           ./gradlew --build-cache --stacktrace setupCIWorkspace
           ./gradlew --build-cache --stacktrace assemble
 
-      - name: Publish GitHub release
+      - name: Upload release jars
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "${RELEASE_VERSION}" --target "${RELEASE_COMMIT}" --generate-notes ./build/libs/*.jar
+        run: gh release upload "${RELEASE_VERSION}" ./build/libs/*.jar --clobber
