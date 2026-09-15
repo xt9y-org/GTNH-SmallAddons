@@ -9,6 +9,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.crafting.ICraftingMedium;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
@@ -24,6 +25,7 @@ public final class XTProfileRouteTracker {
     private static final int TIMING_REFRESH_TICKS = 20;
 
     private final WeakHashMap<CraftingCPUCluster, Long> cpuIds = new WeakHashMap<>();
+    private final WeakHashMap<CraftingCPUCluster, String> cpuCraftIds = new WeakHashMap<>();
     private final Map<String, XTProfileData.MediumRecord> media = new LinkedHashMap<>();
     private final Map<String, TimingTarget> timingTargets = new LinkedHashMap<>();
 
@@ -56,7 +58,7 @@ public final class XTProfileRouteTracker {
             if (!active) return;
 
             long now = System.nanoTime();
-            long cpuId = cpuId(cpu);
+            long cpuId = cpuId(cpu, now);
             String mediumId = XTProfileLabels.mediumId(medium);
             XTProfileData.MediumRecord record = media.get(mediumId);
             if (record == null) {
@@ -78,7 +80,8 @@ public final class XTProfileRouteTracker {
     }
 
     synchronized XTProfilePanelMessage panelMessage(CraftingCPUCluster cpu) {
-        long cpuId = cpu == null ? 0 : cpuId(cpu);
+        long now = System.nanoTime();
+        long cpuId = cpu == null ? 0 : cpuId(cpu, now);
         String cpuName = cpuName(cpu, cpuId);
         return new XTProfilePanelMessage(
             cpuName,
@@ -174,12 +177,49 @@ public final class XTProfileRouteTracker {
         return fallback;
     }
 
-    private long cpuId(CraftingCPUCluster cpu) {
+    private long cpuId(CraftingCPUCluster cpu, long now) {
         Long existing = cpuIds.get(cpu);
-        if (existing != null) return existing;
-        long created = nextCpuId++;
-        cpuIds.put(cpu, created);
-        return created;
+        String currentCraftId = craftId(cpu);
+        if (existing == null) {
+            long created = nextCpuId++;
+            cpuIds.put(cpu, created);
+            cpuCraftIds.put(cpu, currentCraftId);
+            return created;
+        }
+
+        String previousCraftId = cpuCraftIds.get(cpu);
+        if (isNewCraft(previousCraftId, currentCraftId, cpu.isBusy())) {
+            resetCpuMetrics(media.values(), existing);
+            resetTimingBoundary(existing, now);
+        }
+        cpuCraftIds.put(cpu, currentCraftId);
+        return existing;
+    }
+
+    private static String craftId(CraftingCPUCluster cpu) {
+        ICraftingLink link = cpu.getLastCraftingLink();
+        return link == null ? null : link.getCraftingID();
+    }
+
+    static boolean isNewCraft(String previousCraftId, String currentCraftId, boolean busy) {
+        if (!busy || currentCraftId == null) return false;
+        if (previousCraftId == null) return true;
+        return !previousCraftId.equals(currentCraftId);
+    }
+
+    static void resetCpuMetrics(Iterable<XTProfileData.MediumRecord> media, long cpuId) {
+        for (XTProfileData.MediumRecord medium : media) {
+            medium.dispatchesByCpu.remove(cpuId);
+            medium.busyNsByCpu.remove(cpuId);
+            medium.tickCostNsByCpu.remove(cpuId);
+            medium.activeTicksByCpu.remove(cpuId);
+        }
+    }
+
+    private void resetTimingBoundary(long cpuId, long now) {
+        for (TimingTarget target : timingTargets.values()) {
+            if (target.cpuId == cpuId) target.lastSampleNs = now;
+        }
     }
 
     private static String cpuName(CraftingCPUCluster cpu, long id) {
@@ -201,6 +241,7 @@ public final class XTProfileRouteTracker {
 
     private void clear() {
         cpuIds.clear();
+        cpuCraftIds.clear();
         media.clear();
         timingTargets.clear();
         XTProfileMachineResolver.clear();
