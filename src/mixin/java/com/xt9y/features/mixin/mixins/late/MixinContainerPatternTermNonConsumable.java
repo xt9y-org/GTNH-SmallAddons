@@ -215,6 +215,10 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
         xt9y$lastPatternSnapshot = encoded.copy();
         xt9y$patternSnapshotInitialized = true;
         xt9y$encodingMask = 0;
+
+        // AE2 syncs patternSlotOUT from inside encode(), before our TAIL injection adds xt9yNcInputs.
+        // Run one more container sync so the client immediately receives the final tagged pattern and redraws NC.
+        if (Platform.isServer()) ((ContainerPatternTerm) (Object) this).detectAndSendChanges();
     }
 
     @Inject(method = "clear", at = @At("TAIL"))
