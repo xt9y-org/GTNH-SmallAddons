@@ -16,6 +16,8 @@
     "MixinTileInterface"
   ],
   "client": [
+    "MixinGregTech5RecipeProcessorNonConsumable",
+    "MixinNEEPatternTerminalNonConsumable",
     "MixinVirtualMEPhantomSlotNonConsumable",
     "MixinVirtualMESlotNonConsumable"
   ],

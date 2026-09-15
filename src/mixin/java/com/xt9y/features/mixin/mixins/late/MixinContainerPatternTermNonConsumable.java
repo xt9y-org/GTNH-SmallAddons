@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.NonConsumableNEITransfer;
 import com.xt9y.features.NonConsumablePatternHelper;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
@@ -26,6 +27,7 @@ import appeng.container.sync.SyncRegistrar;
 import appeng.container.sync.handlers.IntSyncHandler;
 import appeng.tile.inventory.IAEStackInventory;
 import appeng.util.Platform;
+import appeng.util.item.AEItemStack;
 
 @Mixin(value = ContainerPatternTerm.class, remap = false)
 public abstract class MixinContainerPatternTermNonConsumable implements INonConsumablePatternTerminal {
@@ -52,6 +54,9 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Unique
     private boolean xt9y$patternSnapshotInitialized;
+
+    @Unique
+    private int xt9y$encodingMask;
 
     @Inject(
         method = "<init>(Lnet/minecraft/entity/player/InventoryPlayer;Lappeng/api/storage/ITerminalHost;Z)V",
@@ -128,6 +133,33 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
         return sanitized;
     }
 
+    @Unique
+    private void xt9y$importTransferredNonConsumables() {
+        int mask = xt9y$ncMaskSync.get();
+        boolean changed = false;
+        int size = Math.min(inputs.getSizeInventory(), Integer.SIZE - 1);
+
+        for (int slot = 0; slot < size; slot++) {
+            IAEStack<?> stack = inputs.getAEStackInSlot(slot);
+            if (!(stack instanceof IAEItemStack item)) continue;
+
+            ItemStack itemStack = item.getItemStack();
+            if (!NonConsumableNEITransfer.strip(itemStack)) continue;
+
+            IAEItemStack clean = AEItemStack.create(itemStack);
+            if (clean == null) continue;
+            clean.setStackSize(item.getStackSize());
+            inputs.putAEStackInSlot(slot, clean);
+            mask |= 1 << slot;
+            changed = true;
+        }
+
+        if (changed) {
+            xt9y$ncMaskSync.set(mask);
+            ((ContainerPatternTerm) (Object) this).inputsSync.markDirty();
+        }
+    }
+
     @Override
     public boolean xt9y$isNonConsumable(int slotIndex) {
         xt9y$refreshPatternState();
@@ -152,8 +184,19 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
     private void xt9y$refreshNcState(CallbackInfo ci) {
         xt9y$refreshPatternState();
         if (!Platform.isServer() || isCraftingMode()) return;
+        xt9y$importTransferredNonConsumables();
         int sanitized = xt9y$sanitizedMask();
         if (sanitized != xt9y$ncMaskSync.get()) xt9y$ncMaskSync.set(sanitized);
+    }
+
+    @Inject(method = "encode", at = @At("HEAD"))
+    private void xt9y$captureNcBeforeEncode(CallbackInfo ci) {
+        if (isCraftingMode()) {
+            xt9y$encodingMask = 0;
+            return;
+        }
+        if (Platform.isServer()) xt9y$importTransferredNonConsumables();
+        xt9y$encodingMask = xt9y$sanitizedMask();
     }
 
     @Inject(method = "encode", at = @At("TAIL"))
@@ -162,11 +205,13 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
         ItemStack encoded = patternSlotOUT.getStack();
         if (encoded == null) return;
 
+        xt9y$ncMaskSync.set(xt9y$encodingMask);
         int mask = xt9y$sanitizedMask();
         if (mask != xt9y$ncMaskSync.get()) xt9y$ncMaskSync.set(mask);
         NonConsumablePatternHelper.writeMask(encoded, mask);
         xt9y$lastPatternSnapshot = encoded.copy();
         xt9y$patternSnapshotInitialized = true;
+        xt9y$encodingMask = 0;
     }
 
     @Inject(method = "clear", at = @At("TAIL"))
