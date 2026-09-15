@@ -27,10 +27,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
         InventoryCrafting inventory, Operation<Boolean> original) {
         boolean pushed = original.call(medium, pattern, inventory);
         if (pushed) {
-            XTProfileRouteTracker.INSTANCE.recordDispatch(
-                (CraftingCPUCluster) (Object) this,
-                medium,
-                pattern);
+            XTProfileRouteTracker.INSTANCE.recordDispatch((CraftingCPUCluster) (Object) this, medium, pattern);
         }
         return pushed;
     }
