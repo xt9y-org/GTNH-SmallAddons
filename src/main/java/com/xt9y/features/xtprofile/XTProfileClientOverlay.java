@@ -72,6 +72,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private int hoveredRow = -1;
     private int selectedEntry = -1;
     private boolean scrollbarDragging;
+    private boolean leftMouseDown;
 
     public static synchronized void init() {
         if (initialized) return;
@@ -90,6 +91,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         hoveredRow = -1;
         selectedEntry = -1;
         scrollbarDragging = false;
+        leftMouseDown = false;
     }
 
     @SubscribeEvent
@@ -174,64 +176,13 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 selectedEntry = -1;
             }
 
+            handleScrollInput(event.mouseX, event.mouseY, view.entries.size());
             clampScroll(view.entries.size());
             hoveredRow = rowAt(event.mouseX, event.mouseY, view.entries.size());
             if (selectedEntry >= view.entries.size()) selectedEntry = -1;
             drawRows(view);
         } finally {
             GL11.glPopAttrib();
-        }
-    }
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onMouseInput(GuiScreenEvent.MouseInputEvent.Pre event) {
-        if (!(event.gui instanceof GuiCraftingCPU)) return;
-
-        Minecraft mc = Minecraft.getMinecraft();
-        position(event.gui);
-        int mouseX = scaledMouseX(Mouse.getEventX(), event.gui, mc);
-        int mouseY = scaledMouseY(Mouse.getEventY(), event.gui, mc);
-        XTProfilePanelData.View view = currentView(XTProfileClientState.current());
-        if (view == null) return;
-
-        int entryCount = view.entries.size();
-        int wheel = Mouse.getEventDWheel();
-        if (wheel != 0 && inside(mouseX, mouseY, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT)) {
-            scroll = XTProfileScroll.wheel(scroll, entryCount, VISIBLE_ROWS, wheel);
-            event.setCanceled(true);
-            return;
-        }
-
-        if (entryCount <= VISIBLE_ROWS) {
-            scrollbarDragging = false;
-            return;
-        }
-
-        int trackLeft = panelLeft + SCROLLBAR_LEFT;
-        int trackTop = panelTop + SCROLLBAR_TOP;
-        int button = Mouse.getEventButton();
-        boolean pressed = Mouse.getEventButtonState();
-
-        if (button == 0 && pressed && inside(mouseX, mouseY, trackLeft, trackTop, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT)) {
-            int thumbTop = XTProfileScroll.thumbTop(trackTop, SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS, scroll);
-            int thumbHeight = XTProfileScroll.thumbHeight(SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS);
-            if (mouseY >= thumbTop && mouseY < thumbTop + thumbHeight) {
-                scrollbarDragging = true;
-            } else {
-                scroll += mouseY < thumbTop ? -VISIBLE_ROWS : VISIBLE_ROWS;
-                clampScroll(entryCount);
-            }
-            event.setCanceled(true);
-            return;
-        }
-
-        if (button == 0 && !pressed) {
-            scrollbarDragging = false;
-        }
-
-        if (scrollbarDragging && Mouse.isButtonDown(0)) {
-            scroll = XTProfileScroll.scrollForThumb(mouseY, trackTop, SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS);
-            event.setCanceled(true);
         }
     }
 
@@ -260,6 +211,41 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         if (!(gui instanceof GuiCraftingCPU)) return false;
         position(gui);
         return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, PANEL_WIDTH + 4, PANEL_HEIGHT + 4);
+    }
+
+    private void handleScrollInput(int mouseX, int mouseY, int entryCount) {
+        boolean overPanel = inside(mouseX, mouseY, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT);
+        if (overPanel) {
+            int wheel = Mouse.getDWheel();
+            if (wheel != 0) scroll = XTProfileScroll.wheel(scroll, entryCount, VISIBLE_ROWS, wheel);
+        }
+
+        boolean mouseDown = Mouse.isButtonDown(0);
+        if (entryCount > VISIBLE_ROWS) {
+            int trackLeft = panelLeft + SCROLLBAR_LEFT;
+            int trackTop = panelTop + SCROLLBAR_TOP;
+
+            if (mouseDown && !leftMouseDown
+                && inside(mouseX, mouseY, trackLeft, trackTop, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT)) {
+                int thumbTop = XTProfileScroll.thumbTop(trackTop, SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS, scroll);
+                int thumbHeight = XTProfileScroll.thumbHeight(SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS);
+                if (mouseY >= thumbTop && mouseY < thumbTop + thumbHeight) {
+                    scrollbarDragging = true;
+                } else {
+                    scroll += mouseY < thumbTop ? -VISIBLE_ROWS : VISIBLE_ROWS;
+                    clampScroll(entryCount);
+                }
+            }
+
+            if (scrollbarDragging && mouseDown) {
+                scroll = XTProfileScroll.scrollForThumb(mouseY, trackTop, SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS);
+            }
+        } else {
+            scrollbarDragging = false;
+        }
+
+        if (!mouseDown) scrollbarDragging = false;
+        leftMouseDown = mouseDown;
     }
 
     private static void beginPanelRender() {
@@ -448,14 +434,6 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
     private void clampScroll(int entryCount) {
         scroll = XTProfileScroll.clamp(scroll, entryCount, VISIBLE_ROWS);
-    }
-
-    private static int scaledMouseX(int rawX, GuiScreen gui, Minecraft mc) {
-        return rawX * gui.width / mc.displayWidth;
-    }
-
-    private static int scaledMouseY(int rawY, GuiScreen gui, Minecraft mc) {
-        return gui.height - rawY * gui.height / mc.displayHeight - 1;
     }
 
     private static boolean inside(int x, int y, int left, int top, int width, int height) {
