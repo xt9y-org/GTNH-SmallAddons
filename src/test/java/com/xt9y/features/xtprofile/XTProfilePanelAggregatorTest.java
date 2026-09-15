@@ -1,45 +1,58 @@
 package com.xt9y.features.xtprofile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
 class XTProfilePanelAggregatorTest {
 
     @Test
-    void cpuScopeUsesOnlyDispatchesFromTheSelectedCpuAndSortsDescending() {
-        XTProfileData.MediumRecord first = medium("first", "Assembly Hub", 100, 1, 5, 2, 95);
-        XTProfileData.MediumRecord second = medium("second", "PCB CRIB", 20, 1, 15, 2, 5);
-        XTProfileData.MediumRecord third = medium("third", "Other CPU", 10, 2, 10);
-
-        XTProfilePanelData.View view = XTProfilePanelAggregator.build(Arrays.asList(first, second, third), 1);
-
-        assertEquals(20, view.totalDispatches);
-        assertEquals(2, view.entries.size());
-        assertEquals("PCB CRIB", view.entries.get(0).name);
-        assertEquals(15, view.entries.get(0).dispatches);
-        assertEquals(75.0, view.entries.get(0).sharePercent, 0.0001);
-        assertEquals("Assembly Hub", view.entries.get(1).name);
-        assertEquals(5, view.entries.get(1).dispatches);
-        assertEquals(25.0, view.entries.get(1).sharePercent, 0.0001);
+    void panelEntriesExposeCraftTimeAndTpsUsage() {
+        assertTrue(hasField(XTProfilePanelData.Entry.class, "craftTimeMillis"));
+        assertTrue(hasField(XTProfilePanelData.Entry.class, "tpsUsagePercent"));
     }
 
     @Test
-    void sessionScopeIncludesEveryRecordedCraft() {
+    void cpuScopeSortsByCraftTimeAndCalculatesTpsUsage() throws Exception {
+        XTProfileData.MediumRecord first = medium("first", "Assembly Hub", 100, 1, 95);
+        XTProfileData.MediumRecord second = medium("second", "PCB CRIB", 20, 1, 5);
+
+        timing(first, 1, 2_000_000_000L, 40_000_000L, 40);
+        timing(second, 1, 8_000_000_000L, 100_000_000L, 40);
+
+        XTProfilePanelData.View view = XTProfilePanelAggregator.build(Arrays.asList(first, second), 1);
+
+        assertEquals(2, view.entries.size());
+        assertEquals("PCB CRIB", view.entries.get(0).name);
+        assertEquals(8_000.0, doubleField(view.entries.get(0), "craftTimeMillis"), 0.0001);
+        assertEquals(5.0, doubleField(view.entries.get(0), "tpsUsagePercent"), 0.0001);
+        assertEquals("Assembly Hub", view.entries.get(1).name);
+        assertEquals(2_000.0, doubleField(view.entries.get(1), "craftTimeMillis"), 0.0001);
+        assertEquals(2.0, doubleField(view.entries.get(1), "tpsUsagePercent"), 0.0001);
+    }
+
+    @Test
+    void sessionScopeAggregatesTimingAcrossEveryCraft() throws Exception {
         XTProfileData.MediumRecord first = medium("first", "Assembly Hub", 100, 1, 5, 2, 95);
         XTProfileData.MediumRecord second = medium("second", "PCB CRIB", 20, 1, 15, 2, 5);
-        XTProfileData.MediumRecord third = medium("third", "Wafer Interface", 10, 2, 10);
 
-        XTProfilePanelData.View view = XTProfilePanelAggregator.build(Arrays.asList(first, second, third), 0);
+        timing(first, 0, 12_000_000_000L, 300_000_000L, 100);
+        timing(second, 0, 4_000_000_000L, 50_000_000L, 50);
 
-        assertEquals(130, view.totalDispatches);
-        assertEquals(3, view.entries.size());
+        XTProfilePanelData.View view = XTProfilePanelAggregator.build(Arrays.asList(first, second), 0);
+
+        assertEquals(2, view.entries.size());
         assertEquals("Assembly Hub", view.entries.get(0).name);
-        assertEquals(100, view.entries.get(0).dispatches);
+        assertEquals(12_000.0, doubleField(view.entries.get(0), "craftTimeMillis"), 0.0001);
+        assertEquals(6.0, doubleField(view.entries.get(0), "tpsUsagePercent"), 0.0001);
         assertEquals("PCB CRIB", view.entries.get(1).name);
-        assertEquals("Wafer Interface", view.entries.get(2).name);
+        assertEquals(4_000.0, doubleField(view.entries.get(1), "craftTimeMillis"), 0.0001);
+        assertEquals(2.0, doubleField(view.entries.get(1), "tpsUsagePercent"), 0.0001);
     }
 
     @Test
@@ -76,5 +89,46 @@ class XTProfilePanelAggregatorTest {
             record.dispatchesByCpu.put(cpuAndDispatches[i], cpuAndDispatches[i + 1]);
         }
         return record;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void timing(XTProfileData.MediumRecord record, long cpuId, long busyNs, long tickCostNs,
+        long activeTicks) throws Exception {
+        if (cpuId == 0) {
+            setLong(record, "busyNs", busyNs);
+            setLong(record, "tickCostNs", tickCostNs);
+            setLong(record, "activeTicks", activeTicks);
+            return;
+        }
+        ((Map<Long, Long>) field(record, "busyNsByCpu")).put(cpuId, busyNs);
+        ((Map<Long, Long>) field(record, "tickCostNsByCpu")).put(cpuId, tickCostNs);
+        ((Map<Long, Long>) field(record, "activeTicksByCpu")).put(cpuId, activeTicks);
+    }
+
+    private static boolean hasField(Class<?> type, String name) {
+        try {
+            type.getDeclaredField(name);
+            return true;
+        } catch (NoSuchFieldException ignored) {
+            return false;
+        }
+    }
+
+    private static Object field(Object target, String name) throws Exception {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        return field.get(target);
+    }
+
+    private static void setLong(Object target, String name, long value) throws Exception {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        field.setLong(target, value);
+    }
+
+    private static double doubleField(Object target, String name) throws Exception {
+        Field field = target.getClass().getDeclaredField(name);
+        field.setAccessible(true);
+        return field.getDouble(target);
     }
 }
