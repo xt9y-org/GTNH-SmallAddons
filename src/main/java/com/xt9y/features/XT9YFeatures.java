@@ -48,7 +48,9 @@ public class XT9YFeatures {
         WildcardToggleHandler.init();
         WildcardTooltipHandler.init();
         XTProfileNetwork.init();
-        if (FMLCommonHandler.instance().getSide().isClient()) XTProfileClientOverlay.init();
+        if (FMLCommonHandler.instance()
+            .getSide()
+            .isClient()) XTProfileClientOverlay.init();
         FMLCommonHandler.instance()
             .bus()
             .register(XTProfileRouteTracker.INSTANCE);
