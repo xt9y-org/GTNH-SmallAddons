@@ -360,7 +360,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 mc.fontRenderer.drawString(machine, x, infoY, DIM_TEXT);
             }
         } else {
-            mc.fontRenderer.drawString("Scroll for more · Shift-click highlights", panelLeft + 8, panelTop + 174, DIM_TEXT);
+            mc.fontRenderer
+                .drawString("Scroll for more · Shift-click highlights", panelLeft + 8, panelTop + 174, DIM_TEXT);
         }
     }
 
