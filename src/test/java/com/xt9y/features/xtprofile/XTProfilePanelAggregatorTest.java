@@ -1,9 +1,11 @@
 package com.xt9y.features.xtprofile;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -78,6 +80,36 @@ class XTProfilePanelAggregatorTest {
         assertEquals(120, entry.x);
         assertEquals(74, entry.y);
         assertEquals(-44, entry.z);
+    }
+
+    @Test
+    void newCraftBoundaryIsDetectedOnlyWhileCpuIsBusy() throws Exception {
+        Method method = XTProfileRouteTracker.class
+            .getDeclaredMethod("isNewCraft", String.class, String.class, boolean.class);
+        method.setAccessible(true);
+
+        assertTrue((Boolean) method.invoke(null, "craft-a", "craft-b", true));
+        assertFalse((Boolean) method.invoke(null, "craft-a", "craft-a", true));
+        assertFalse((Boolean) method.invoke(null, "craft-a", "craft-b", false));
+    }
+
+    @Test
+    void resettingCpuMetricsKeepsSessionTotals() throws Exception {
+        XTProfileData.MediumRecord medium = medium("pcb", "PCB CRIB", 100, 3, 40);
+        timing(medium, 0, 9_000_000_000L, 200_000_000L, 100);
+        timing(medium, 3, 4_000_000_000L, 120_000_000L, 40);
+
+        Method method = XTProfileRouteTracker.class.getDeclaredMethod("resetCpuMetrics", Iterable.class, long.class);
+        method.setAccessible(true);
+        method.invoke(null, Arrays.asList(medium), 3L);
+
+        XTProfilePanelData.View cpu = XTProfilePanelAggregator.build(Arrays.asList(medium), 3);
+        XTProfilePanelData.View session = XTProfilePanelAggregator.build(Arrays.asList(medium), 0);
+
+        assertEquals(0, cpu.entries.size());
+        assertEquals(1, session.entries.size());
+        assertEquals(9_000.0, doubleField(session.entries.get(0), "craftTimeMillis"), 0.0001);
+        assertEquals(4.0, doubleField(session.entries.get(0), "tpsUsagePercent"), 0.0001);
     }
 
     private static XTProfileData.MediumRecord medium(String id, String name, long total, long... cpuAndDispatches) {
