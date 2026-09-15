@@ -5,9 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import com.xt9y.features.mte.MTELinkedInputHatch;
 import com.xt9y.features.xtprofile.XTProfileClientOverlay;
-import com.xt9y.features.xtprofile.XTProfileCommand;
-import com.xt9y.features.xtprofile.XTProfileManager;
 import com.xt9y.features.xtprofile.XTProfileNetwork;
+import com.xt9y.features.xtprofile.XTProfileRouteTracker;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
@@ -52,7 +51,7 @@ public class XT9YFeatures {
         if (FMLCommonHandler.instance().getSide().isClient()) XTProfileClientOverlay.init();
         FMLCommonHandler.instance()
             .bus()
-            .register(XTProfileManager.INSTANCE);
+            .register(XTProfileRouteTracker.INSTANCE);
     }
 
     @Mod.EventHandler
@@ -60,12 +59,11 @@ public class XT9YFeatures {
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
-        XTProfileManager.INSTANCE.startSession();
-        event.registerServerCommand(new XTProfileCommand());
+        XTProfileRouteTracker.INSTANCE.startSession();
     }
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
-        XTProfileManager.INSTANCE.stop();
+        XTProfileRouteTracker.INSTANCE.stopSession();
     }
 }
