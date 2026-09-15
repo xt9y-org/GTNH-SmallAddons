@@ -41,6 +41,9 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
     private SlotRestrictedInput patternSlotOUT;
 
     @Shadow(remap = false)
+    private boolean isFirstUpdate;
+
+    @Shadow(remap = false)
     public abstract boolean isCraftingMode();
 
     @Unique
@@ -156,7 +159,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
         if (changed) {
             xt9y$ncMaskSync.set(mask);
-            ((ContainerPatternTerm) (Object) this).inputsSync.markDirty();
+            isFirstUpdate = true;
         }
     }
 
