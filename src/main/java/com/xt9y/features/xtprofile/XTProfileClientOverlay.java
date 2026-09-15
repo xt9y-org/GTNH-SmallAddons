@@ -2,12 +2,12 @@ package com.xt9y.features.xtprofile;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
-import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
@@ -69,7 +69,7 @@ public final class XTProfileClientOverlay {
         XTProfilePanelMessage message = XTProfileClientState.current();
         position(event.gui);
         drawBackground(event.gui);
-        drawHeader(event.gui, message);
+        drawHeader(message);
 
         XTProfilePanelData.View view = currentView(message);
         if (view == null) {
@@ -83,7 +83,7 @@ public final class XTProfileClientOverlay {
         }
         clampScroll(view.entries.size());
         hoveredRow = rowAt(event.mouseX, event.mouseY, view.entries.size());
-        drawRows(event.gui, view, event.mouseX, event.mouseY);
+        drawRows(event.gui, view);
     }
 
     @SubscribeEvent
@@ -128,9 +128,7 @@ public final class XTProfileClientOverlay {
         int row = rowAt(mouseX, mouseY, view == null ? 0 : view.entries.size());
         if (row >= 0 && view != null) {
             XTProfilePanelData.Entry entry = view.entries.get(scroll + row);
-            if (GuiScreen.isShiftKeyDown() && entry.hasLocation) {
-                highlight(entry, mc);
-            }
+            if (GuiScreen.isShiftKeyDown() && entry.hasLocation) highlight(entry, mc);
             event.setCanceled(true);
             return;
         }
@@ -141,14 +139,15 @@ public final class XTProfileClientOverlay {
     private void drawBackground(GuiScreen gui) {
         Minecraft mc = Minecraft.getMinecraft();
         GL11.glColor4f(1, 1, 1, 1);
-        mc.getTextureManager().bindTexture(CPU_TEXTURE);
+        mc.getTextureManager()
+            .bindTexture(CPU_TEXTURE);
         gui.drawTexturedModalRect(panelLeft, panelTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT);
 
         Gui.drawRect(panelLeft + 6, panelTop + 25, panelLeft + PANEL_WIDTH - 7, panelTop + 173, 0xB0181B1D);
         Gui.drawRect(panelLeft + 7, panelTop + 26, panelLeft + PANEL_WIDTH - 8, panelTop + 172, 0xD024282B);
     }
 
-    private void drawHeader(GuiScreen gui, XTProfilePanelMessage message) {
+    private void drawHeader(XTProfilePanelMessage message) {
         Minecraft mc = Minecraft.getMinecraft();
         int text = ColorUtils.guiTextColorGray.getColor();
         mc.fontRenderer.drawString("Crafting Routes", panelLeft + 8, panelTop + 7, text);
@@ -170,7 +169,7 @@ public final class XTProfileClientOverlay {
         mc.fontRenderer.drawString(subtitle, panelLeft + 8, panelTop + 19, 0xFF707070);
     }
 
-    private void drawRows(GuiScreen gui, XTProfilePanelData.View view, int mouseX, int mouseY) {
+    private void drawRows(GuiScreen gui, XTProfilePanelData.View view) {
         Minecraft mc = Minecraft.getMinecraft();
         List<XTProfilePanelData.Entry> entries = view.entries;
         int end = Math.min(entries.size(), scroll + VISIBLE_ROWS);
@@ -265,13 +264,11 @@ public final class XTProfileClientOverlay {
     }
 
     private static int scaledMouseX(int rawX, Minecraft mc) {
-        ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
-        return rawX * resolution.getScaledWidth() / mc.displayWidth;
+        return rawX * mc.currentScreen.width / mc.displayWidth;
     }
 
     private static int scaledMouseY(int rawY, Minecraft mc) {
-        ScaledResolution resolution = new ScaledResolution(mc, mc.displayWidth, mc.displayHeight);
-        return resolution.getScaledHeight() - rawY * resolution.getScaledHeight() / mc.displayHeight - 1;
+        return mc.currentScreen.height - rawY * mc.currentScreen.height / mc.displayHeight - 1;
     }
 
     private static boolean inside(int x, int y, int left, int top, int width, int height) {
@@ -286,8 +283,8 @@ public final class XTProfileClientOverlay {
 
     private static String compact(long value) {
         if (value < 1_000) return Long.toString(value);
-        if (value < 1_000_000) return String.format("%.1fk", value / 1_000.0);
-        return String.format("%.1fM", value / 1_000_000.0);
+        if (value < 1_000_000) return String.format(Locale.ROOT, "%.1fk", value / 1_000.0);
+        return String.format(Locale.ROOT, "%.1fM", value / 1_000_000.0);
     }
 
     private static void drawCentered(GuiScreen gui, String text, int y, int color) {
