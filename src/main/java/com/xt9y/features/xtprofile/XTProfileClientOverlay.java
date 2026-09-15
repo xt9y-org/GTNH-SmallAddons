@@ -54,6 +54,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private static final int LIST_BORDER = 0xFF373737;
     private static final int LIST_INNER_BORDER = 0xFFFFFFFF;
     private static final int DIM_TEXT = 0xFF606060;
+    private static final int TIME_RIGHT = 135;
+    private static final int TPS_RIGHT = 165;
 
     private static boolean initialized;
 
@@ -148,25 +150,30 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
         XTProfilePanelMessage message = XTProfileClientState.current();
         position(event.gui);
-        drawBackground(event.gui);
-        drawHeader(message);
+        beginPanelRender();
+        try {
+            drawBackground(event.gui);
+            drawHeader(message);
 
-        XTProfilePanelData.View view = currentView(message);
-        if (view == null) {
-            drawCentered("Waiting for route data...", panelTop + 83, GuiColors.GuiTextColorGray.getColor());
-            return;
+            XTProfilePanelData.View view = currentView(message);
+            if (view == null) {
+                drawCentered("Waiting for route data...", panelTop + 83, GuiColors.GuiTextColorGray.getColor());
+                return;
+            }
+
+            if (view.cpuId != lastCpuId && !sessionScope) {
+                lastCpuId = view.cpuId;
+                scroll = 0;
+                selectedEntry = -1;
+            }
+
+            clampScroll(view.entries.size());
+            hoveredRow = rowAt(event.mouseX, event.mouseY, view.entries.size());
+            if (selectedEntry >= view.entries.size()) selectedEntry = -1;
+            drawRows(view);
+        } finally {
+            GL11.glPopAttrib();
         }
-
-        if (view.cpuId != lastCpuId && !sessionScope) {
-            lastCpuId = view.cpuId;
-            scroll = 0;
-            selectedEntry = -1;
-        }
-
-        clampScroll(view.entries.size());
-        hoveredRow = rowAt(event.mouseX, event.mouseY, view.entries.size());
-        if (selectedEntry >= view.entries.size()) selectedEntry = -1;
-        drawRows(view);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
@@ -214,9 +221,21 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, PANEL_WIDTH + 4, PANEL_HEIGHT + 4);
     }
 
+    private static void beginPanelRender() {
+        GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        GL11.glDisable(GL11.GL_LIGHTING);
+        GL11.glDisable(GL11.GL_DEPTH_TEST);
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glDisable(GL11.GL_FOG);
+        GL11.glDisable(GL11.GL_RESCALE_NORMAL);
+        GL11.glEnable(GL11.GL_TEXTURE_2D);
+        GL11.glEnable(GL11.GL_BLEND);
+        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+    }
+
     private void drawBackground(GuiScreen gui) {
         Minecraft mc = Minecraft.getMinecraft();
-        GL11.glColor4f(1, 1, 1, 1);
         mc.getTextureManager()
             .bindTexture(CPU_TEXTURE);
         gui.drawTexturedModalRect(panelLeft, panelTop, 0, 0, PANEL_WIDTH, PANEL_HEIGHT);
@@ -236,16 +255,10 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawToggle(mc, cpuLeft, panelTop + 4, CPU_TOGGLE_WIDTH, "CPU", !sessionScope);
         drawToggle(mc, allLeft, panelTop + 4, ALL_TOGGLE_WIDTH, "All", sessionScope);
 
-        XTProfilePanelData.View view = currentView(message);
-        String subtitle;
-        if (message == null) {
-            subtitle = "Live interface / CRIB usage";
-        } else if (sessionScope) {
-            subtitle = "Session · " + (view == null ? 0 : view.totalDispatches) + " pushes";
-        } else {
-            subtitle = fit(message.cpuName, 104, mc) + " · " + (view == null ? 0 : view.totalDispatches) + " pushes";
-        }
-        mc.fontRenderer.drawString(subtitle, panelLeft + 8, panelTop + 19, DIM_TEXT);
+        String scope = message == null ? "Routes" : sessionScope ? "Session" : message.cpuName;
+        mc.fontRenderer.drawString(fit(scope, 89, mc), panelLeft + 8, panelTop + 19, DIM_TEXT);
+        drawRight(mc, "Time", panelLeft + TIME_RIGHT, panelTop + 19, DIM_TEXT);
+        drawRight(mc, "TPS", panelLeft + TPS_RIGHT, panelTop + 19, DIM_TEXT);
     }
 
     private void drawRows(XTProfilePanelData.View view) {
@@ -281,16 +294,10 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                     GuiColors.CraftingDiagnosticTerminalLine.getColor());
             }
 
-            String name = fit(entry.name, 102, mc);
+            String name = fit(entry.name, 91, mc);
             mc.fontRenderer.drawString(name, panelLeft + 10, y, textColor);
-
-            String count = compact(entry.dispatches);
-            int countX = panelLeft + 126 - mc.fontRenderer.getStringWidth(count);
-            mc.fontRenderer.drawString(count, countX, y, textColor);
-
-            String share = Math.round(entry.sharePercent) + "%";
-            int shareX = panelLeft + PANEL_WIDTH - 11 - mc.fontRenderer.getStringWidth(share);
-            mc.fontRenderer.drawString(share, shareX, y, DIM_TEXT);
+            drawRight(mc, craftTime(entry.craftTimeMillis), panelLeft + TIME_RIGHT, y, textColor);
+            drawRight(mc, tpsUsage(entry.tpsUsagePercent), panelLeft + TPS_RIGHT, y, DIM_TEXT);
         }
 
         if (entries.isEmpty()) {
@@ -329,6 +336,10 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         int color = selected ? 0xFFFFFFFF : GuiColors.GuiTextColorGray.getColor();
         int textX = x + (width - mc.fontRenderer.getStringWidth(label)) / 2;
         mc.fontRenderer.drawString(label, textX, y + 3, color);
+    }
+
+    private static void drawRight(Minecraft mc, String text, int right, int y, int color) {
+        mc.fontRenderer.drawString(text, right - mc.fontRenderer.getStringWidth(text), y, color);
     }
 
     private static void highlight(XTProfilePanelData.Entry entry, Minecraft mc) {
@@ -399,10 +410,23 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             + "...";
     }
 
-    private static String compact(long value) {
-        if (value < 1_000) return Long.toString(value);
-        if (value < 1_000_000) return String.format(Locale.ROOT, "%.1fk", value / 1_000.0);
-        return String.format(Locale.ROOT, "%.1fM", value / 1_000_000.0);
+    private static String craftTime(double millis) {
+        if (!(millis > 0.0)) return "0s";
+        if (millis < 1_000.0) return Math.round(millis) + "ms";
+
+        double seconds = millis / 1_000.0;
+        if (seconds < 10.0) return String.format(Locale.ROOT, "%.1fs", seconds);
+        if (seconds < 60.0) return Math.round(seconds) + "s";
+
+        long rounded = Math.round(seconds);
+        if (rounded < 3_600) return String.format(Locale.ROOT, "%d:%02d", rounded / 60, rounded % 60);
+        return String.format(Locale.ROOT, "%d:%02d", rounded / 3_600, (rounded % 3_600) / 60);
+    }
+
+    private static String tpsUsage(double percent) {
+        if (!(percent > 0.0)) return "0%";
+        if (percent < 0.05) return "<0.1%";
+        return String.format(Locale.ROOT, "%.1f%%", percent);
     }
 
     private void drawCentered(String text, int y, int color) {
