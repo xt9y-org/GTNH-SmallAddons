@@ -1,5 +1,6 @@
 package com.xt9y.features.xtprofile;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -7,14 +8,16 @@ import java.util.Map;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.MouseEvent;
 import net.minecraftforge.common.MinecraftForge;
 
-import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import appeng.api.util.NamedDimensionalCoord;
@@ -22,8 +25,11 @@ import appeng.client.gui.implementations.GuiCraftingCPU;
 import appeng.client.render.highlighter.BlockPosHighlighter;
 import appeng.core.localization.GuiColors;
 import appeng.core.localization.PlayerMessages;
+import codechicken.nei.VisiblityData;
 import codechicken.nei.api.API;
 import codechicken.nei.api.INEIGuiHandler;
+import codechicken.nei.api.TaggedInventoryArea;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public final class XTProfileClientOverlay implements INEIGuiHandler {
@@ -41,6 +47,9 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private static final int VISIBLE_ROWS = 9;
     private static final int CPU_TOGGLE_WIDTH = 30;
     private static final int ALL_TOGGLE_WIDTH = 24;
+    private static final int CPU_BUTTON_ID = -4100;
+    private static final int ALL_BUTTON_ID = -4101;
+    private static final int ROW_BUTTON_BASE_ID = -4110;
     private static final int LIST_BG = 0xFFC6C6C6;
     private static final int LIST_BORDER = 0xFF373737;
     private static final int LIST_INNER_BORDER = 0xFFFFFFFF;
@@ -75,6 +84,65 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     }
 
     @SubscribeEvent
+    public void onGuiInit(GuiScreenEvent.InitGuiEvent.Post event) {
+        if (!(event.gui instanceof GuiCraftingCPU)) return;
+
+        position(event.gui);
+        int cpuLeft = panelLeft + PANEL_WIDTH - CPU_TOGGLE_WIDTH - ALL_TOGGLE_WIDTH - 13;
+        int allLeft = panelLeft + PANEL_WIDTH - ALL_TOGGLE_WIDTH - 7;
+        event.buttonList.add(new OverlayHitButton(CPU_BUTTON_ID, cpuLeft, panelTop + 4, CPU_TOGGLE_WIDTH, 13));
+        event.buttonList.add(new OverlayHitButton(ALL_BUTTON_ID, allLeft, panelTop + 4, ALL_TOGGLE_WIDTH, 13));
+
+        for (int row = 0; row < VISIBLE_ROWS; row++) {
+            event.buttonList.add(
+                new OverlayHitButton(
+                    ROW_BUTTON_BASE_ID - row,
+                    panelLeft + 8,
+                    panelTop + ROW_TOP - 2 + row * ROW_HEIGHT,
+                    PANEL_WIDTH - 17,
+                    ROW_HEIGHT));
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onAction(GuiScreenEvent.ActionPerformedEvent.Pre event) {
+        if (!(event.gui instanceof GuiCraftingCPU)) return;
+
+        if (event.button.id == CPU_BUTTON_ID) {
+            sessionScope = false;
+            scroll = 0;
+            selectedEntry = -1;
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.button.id == ALL_BUTTON_ID) {
+            sessionScope = true;
+            scroll = 0;
+            selectedEntry = -1;
+            event.setCanceled(true);
+            return;
+        }
+
+        int row = ROW_BUTTON_BASE_ID - event.button.id;
+        if (row < 0 || row >= VISIBLE_ROWS) return;
+
+        XTProfilePanelData.View view = currentView(XTProfileClientState.current());
+        if (view == null) {
+            event.setCanceled(true);
+            return;
+        }
+
+        int entryIndex = scroll + row;
+        if (entryIndex >= 0 && entryIndex < view.entries.size()) {
+            selectedEntry = entryIndex;
+            XTProfilePanelData.Entry entry = view.entries.get(entryIndex);
+            if (GuiScreen.isShiftKeyDown() && entry.hasLocation) highlight(entry, Minecraft.getMinecraft());
+        }
+        event.setCanceled(true);
+    }
+
+    @SubscribeEvent
     public void onDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
         if (!(event.gui instanceof GuiCraftingCPU)) return;
 
@@ -101,59 +169,42 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawRows(view);
     }
 
-    @SubscribeEvent
-    public void onMouse(GuiScreenEvent.MouseInputEvent.Pre event) {
-        if (!(event.gui instanceof GuiCraftingCPU)) return;
-
+    @SubscribeEvent(priority = EventPriority.HIGHEST, receiveCanceled = true)
+    public void onMouse(MouseEvent event) {
         Minecraft mc = Minecraft.getMinecraft();
-        position(event.gui);
+        if (!(mc.currentScreen instanceof GuiCraftingCPU) || event.dwheel == 0) return;
 
-        int mouseX = scaledMouseX(Mouse.getEventX(), event.gui, mc);
-        int mouseY = scaledMouseY(Mouse.getEventY(), event.gui, mc);
+        position(mc.currentScreen);
+        int mouseX = scaledMouseX(event.x, mc.currentScreen, mc);
+        int mouseY = scaledMouseY(event.y, mc.currentScreen, mc);
         if (!inside(mouseX, mouseY, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT)) return;
 
-        XTProfilePanelMessage message = XTProfileClientState.current();
-        XTProfilePanelData.View view = currentView(message);
-        int wheel = Mouse.getEventDWheel();
-        if (wheel != 0) {
-            if (view != null) {
-                scroll += wheel < 0 ? 1 : -1;
-                clampScroll(view.entries.size());
-            }
-            event.setCanceled(true);
-            return;
+        XTProfilePanelData.View view = currentView(XTProfileClientState.current());
+        if (view != null) {
+            scroll += event.dwheel < 0 ? 1 : -1;
+            clampScroll(view.entries.size());
         }
-
-        if (Mouse.getEventButton() != 0 || !Mouse.getEventButtonState()) return;
-
-        int cpuToggleLeft = panelLeft + PANEL_WIDTH - CPU_TOGGLE_WIDTH - ALL_TOGGLE_WIDTH - 13;
-        int allToggleLeft = panelLeft + PANEL_WIDTH - ALL_TOGGLE_WIDTH - 7;
-        if (inside(mouseX, mouseY, cpuToggleLeft, panelTop + 4, CPU_TOGGLE_WIDTH, 13)) {
-            sessionScope = false;
-            scroll = 0;
-            selectedEntry = -1;
-            event.setCanceled(true);
-            return;
-        }
-        if (inside(mouseX, mouseY, allToggleLeft, panelTop + 4, ALL_TOGGLE_WIDTH, 13)) {
-            sessionScope = true;
-            scroll = 0;
-            selectedEntry = -1;
-            event.setCanceled(true);
-            return;
-        }
-
-        int row = rowAt(mouseX, mouseY, view == null ? 0 : view.entries.size());
-        if (row >= 0 && view != null) {
-            int entryIndex = scroll + row;
-            XTProfilePanelData.Entry entry = view.entries.get(entryIndex);
-            selectedEntry = entryIndex;
-            if (GuiScreen.isShiftKeyDown() && entry.hasLocation) highlight(entry, mc);
-            event.setCanceled(true);
-            return;
-        }
-
         event.setCanceled(true);
+    }
+
+    @Override
+    public VisiblityData modifyVisiblity(GuiContainer gui, VisiblityData currentVisibility) {
+        return currentVisibility;
+    }
+
+    @Override
+    public Iterable<Integer> getItemSpawnSlots(GuiContainer gui, ItemStack item) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<TaggedInventoryArea> getInventoryAreas(GuiContainer gui) {
+        return null;
+    }
+
+    @Override
+    public boolean handleDragNDrop(GuiContainer gui, int mousex, int mousey, ItemStack draggedStack, int button) {
+        return false;
     }
 
     @Override
@@ -358,6 +409,16 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         Minecraft mc = Minecraft.getMinecraft();
         int x = panelLeft + (PANEL_WIDTH - mc.fontRenderer.getStringWidth(text)) / 2;
         mc.fontRenderer.drawString(text, x, y, color);
+    }
+
+    private static final class OverlayHitButton extends GuiButton {
+
+        private OverlayHitButton(int id, int x, int y, int width, int height) {
+            super(id, x, y, width, height, "");
+        }
+
+        @Override
+        public void drawButton(Minecraft mc, int mouseX, int mouseY) {}
     }
 
     private XTProfileClientOverlay() {}
