@@ -40,6 +40,7 @@ final class XTProfileData {
         long lastSampleNs;
         long currentCpuId;
         String currentItemKey;
+        String currentMediumId;
         boolean active;
         boolean timingStartedByProfile;
         XTProfileStats.Timing timing = XTProfileStats.summarize(null);
@@ -60,6 +61,9 @@ final class XTProfileData {
         String machine;
         String item;
         long dispatches;
+        long busyNs;
+        long tickCostNs;
+        long activeTicks;
         long lastDispatchNs;
         boolean hasLocation;
         int dimension;
@@ -67,6 +71,9 @@ final class XTProfileData {
         int y;
         int z;
         final Map<Long, Long> dispatchesByCpu = new LinkedHashMap<>();
+        final Map<Long, Long> busyNsByCpu = new LinkedHashMap<>();
+        final Map<Long, Long> tickCostNsByCpu = new LinkedHashMap<>();
+        final Map<Long, Long> activeTicksByCpu = new LinkedHashMap<>();
     }
 
     static final class ItemRecord {
