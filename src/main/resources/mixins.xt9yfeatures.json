@@ -13,7 +13,8 @@
     "MixinCRIBGuiWildcard",
     "MixinMTETieredMachineBlockBaseGui",
     "MixinDualityInterface",
-    "MixinTileInterface"
+    "MixinTileInterface",
+    "MixinCraftingCPUClusterXTProfile"
   ],
   "client": [
     "MixinGregTech5RecipeProcessorNonConsumable",
