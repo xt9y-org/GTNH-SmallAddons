@@ -1,0 +1,54 @@
+name: Publish v1.0.9
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '.github/workflows/publish-v1.0.9.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.head_commit.message == 'release: publish v1.0.9'
+    runs-on: ubuntu-24.04
+    env:
+      RELEASE_VERSION: v1.0.9
+      RELEASE_COMMIT: 26efa464b0467a5f02dd2aa9933b8d51150e4852
+    steps:
+      - name: Checkout verified release commit
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ env.RELEASE_COMMIT }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Make release version visible to Gradle
+        run: git tag "${RELEASE_VERSION}"
+
+      - name: Set up JDK versions
+        uses: actions/setup-java@v5
+        with:
+          java-version: |
+            8
+            17
+            21
+            25
+          distribution: zulu
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v5
+        with:
+          validate-wrappers: true
+
+      - name: Build release jars
+        run: |
+          chmod +x gradlew
+          ./gradlew --build-cache --stacktrace setupCIWorkspace
+          ./gradlew --build-cache --stacktrace assemble
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${RELEASE_VERSION}" --target "${RELEASE_COMMIT}" --generate-notes ./build/libs/*.jar
