@@ -27,9 +27,11 @@ public final class XTProfileManager {
     private static final int MAX_TICK_SAMPLES = 120;
     private static final int RECENT_TICKS = 100;
     private static final int TIMING_REFRESH_TICKS = 20;
+    private static final int PANEL_REFRESH_TICKS = 10;
 
     private final IdentityHashMap<CraftingCPUCluster, XTProfileData.CpuRecord> activeCpus = new IdentityHashMap<>();
     private final LinkedHashMap<String, XTProfileData.MachineRecord> machines = new LinkedHashMap<>();
+    private final LinkedHashMap<String, XTProfileData.MediumRecord> media = new LinkedHashMap<>();
     private final LinkedHashMap<String, XTProfileData.ItemRecord> items = new LinkedHashMap<>();
     private final LinkedHashMap<String, XTProfileData.RouteRecord> routes = new LinkedHashMap<>();
     private final Deque<XTProfileData.TickSampleRecord> tickSamples = new ArrayDeque<>();
@@ -58,19 +60,25 @@ public final class XTProfileManager {
         return running;
     }
 
-    public synchronized String start() throws IOException {
-        if (running && httpServer != null) return httpServer.getUrl();
-
+    public synchronized void startSession() {
+        if (running) return;
         releaseMachineTiming();
         clearState();
         XTProfileMachineResolver.clear();
         startedAtNs = System.nanoTime();
         startedAtMillis = System.currentTimeMillis();
+        running = true;
+    }
+
+    public synchronized String start() throws IOException {
+        if (running && httpServer != null) return httpServer.getUrl();
+
+        if (!running) startSession();
+        if (httpServer != null) return httpServer.getUrl();
 
         XTProfileHttpServer server = new XTProfileHttpServer(this);
         server.start();
         httpServer = server;
-        running = true;
         return server.getUrl();
     }
 
@@ -187,6 +195,7 @@ public final class XTProfileManager {
         }
         if (event.phase != TickEvent.Phase.END) return;
 
+        boolean updatePanel;
         long handlerStart = System.nanoTime();
         synchronized (this) {
             if (!running) return;
@@ -266,7 +275,10 @@ public final class XTProfileManager {
             sample.itemKey = topItemKey;
             tickSamples.addLast(sample);
             while (tickSamples.size() > MAX_TICK_SAMPLES) tickSamples.removeFirst();
+            updatePanel = tickSequence % PANEL_REFRESH_TICKS == 0;
         }
+
+        if (updatePanel) XTProfilePanelSync.syncOpenCraftingCpuScreens(this);
     }
 
     synchronized XTProfileData.Snapshot snapshot() {
@@ -286,6 +298,26 @@ public final class XTProfileManager {
             routes.values(),
             tickSamples,
             history);
+    }
+
+    synchronized XTProfilePanelMessage panelMessage(CraftingCPUCluster cpu) {
+        long now = System.nanoTime();
+        XTProfileData.CpuRecord record = activeCpus.get(cpu);
+        if (record == null && cpu != null && cpu.isBusy()) record = ensureCpu(cpu, now);
+
+        long cpuId = record == null ? 0 : record.id;
+        String cpuName = record == null ? safeCpuName(cpu) : record.name;
+        return new XTProfilePanelMessage(
+            cpuName,
+            XTProfilePanelAggregator.build(media.values(), cpuId),
+            XTProfilePanelAggregator.build(media.values(), 0));
+    }
+
+    private static String safeCpuName(CraftingCPUCluster cpu) {
+        if (cpu == null) return "Crafting CPU";
+        String name = cpu.getName();
+        return name == null || name.trim()
+            .isEmpty() ? "Crafting CPU" : name;
     }
 
     private XTProfileData.CpuRecord ensureCpu(CraftingCPUCluster cpu, long now) {
@@ -387,6 +419,7 @@ public final class XTProfileManager {
         XTProfileData.ItemRecord outputRecord = recordPattern(craft, machine, pattern, now);
         String itemKey = outputRecord == null ? null : outputRecord.key;
         machine.currentItemKey = itemKey;
+        recordMedium(craft, machine, medium, outputRecord, now);
 
         String mediumId = medium == null ? "medium:unknown" : XTProfileLabels.mediumId(medium);
         String routeId = craft.id + "\n" + machine.id + "\n" + mediumId + "\n" + XTProfileLabels.pattern(pattern);
@@ -410,6 +443,36 @@ public final class XTProfileManager {
         route.itemKey = itemKey;
         route.dispatches++;
         route.lastDispatchNs = now;
+    }
+
+    private void recordMedium(XTProfileData.CpuRecord craft, XTProfileData.MachineRecord machine,
+        ICraftingMedium medium, XTProfileData.ItemRecord item, long now) {
+        if (medium == null) return;
+
+        String id = XTProfileLabels.mediumId(medium);
+        XTProfileData.MediumRecord record = media.get(id);
+        if (record == null) {
+            record = new XTProfileData.MediumRecord();
+            record.id = id;
+            media.put(id, record);
+        }
+
+        record.name = XTProfileLabels.mediumName(medium);
+        record.type = XTProfileLabels.mediumType(medium);
+        record.machine = machine == null ? "" : machine.name;
+        record.item = item == null ? "" : item.name;
+        record.dispatches++;
+        record.lastDispatchNs = now;
+        add(record.dispatchesByCpu, craft.id, 1);
+
+        TileEntity tile = XTProfileLabels.mediumTile(medium);
+        if (tile != null && tile.getWorldObj() != null) {
+            record.hasLocation = true;
+            record.dimension = tile.getWorldObj().provider.dimensionId;
+            record.x = tile.xCoord;
+            record.y = tile.yCoord;
+            record.z = tile.zCoord;
+        }
     }
 
     private XTProfileData.ItemRecord recordPattern(XTProfileData.CpuRecord craft, XTProfileData.MachineRecord machine,
@@ -473,6 +536,7 @@ public final class XTProfileManager {
     private void clearState() {
         activeCpus.clear();
         machines.clear();
+        media.clear();
         items.clear();
         routes.clear();
         tickSamples.clear();
