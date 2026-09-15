@@ -115,19 +115,22 @@ class XTProfilePanelAggregatorTest {
     }
 
     private static Object field(Object target, String name) throws Exception {
-        Field field = target.getClass().getDeclaredField(name);
+        Field field = target.getClass()
+            .getDeclaredField(name);
         field.setAccessible(true);
         return field.get(target);
     }
 
     private static void setLong(Object target, String name, long value) throws Exception {
-        Field field = target.getClass().getDeclaredField(name);
+        Field field = target.getClass()
+            .getDeclaredField(name);
         field.setAccessible(true);
         field.setLong(target, value);
     }
 
     private static double doubleField(Object target, String name) throws Exception {
-        Field field = target.getClass().getDeclaredField(name);
+        Field field = target.getClass()
+            .getDeclaredField(name);
         field.setAccessible(true);
         return field.getDouble(target);
     }
