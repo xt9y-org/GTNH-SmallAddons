@@ -19,7 +19,7 @@ import org.lwjgl.opengl.GL11;
 import appeng.api.util.NamedDimensionalCoord;
 import appeng.client.gui.implementations.GuiCraftingCPU;
 import appeng.client.render.highlighter.BlockPosHighlighter;
-import appeng.core.localization.ColorUtils;
+import appeng.core.localization.GuiColors;
 import appeng.core.localization.PlayerMessages;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
@@ -73,7 +73,7 @@ public final class XTProfileClientOverlay {
 
         XTProfilePanelData.View view = currentView(message);
         if (view == null) {
-            drawCentered(event.gui, "Waiting for route data...", panelTop + 83, ColorUtils.guiTextColorGray.getColor());
+            drawCentered(event.gui, "Waiting for route data...", panelTop + 83, GuiColors.GuiTextColorGray.getColor());
             return;
         }
 
@@ -149,7 +149,7 @@ public final class XTProfileClientOverlay {
 
     private void drawHeader(XTProfilePanelMessage message) {
         Minecraft mc = Minecraft.getMinecraft();
-        int text = ColorUtils.guiTextColorGray.getColor();
+        int text = GuiColors.GuiTextColorGray.getColor();
         mc.fontRenderer.drawString("Crafting Routes", panelLeft + 8, panelTop + 7, text);
 
         int cpuLeft = panelLeft + PANEL_WIDTH - CPU_TOGGLE_WIDTH - ALL_TOGGLE_WIDTH - 13;
@@ -173,7 +173,7 @@ public final class XTProfileClientOverlay {
         Minecraft mc = Minecraft.getMinecraft();
         List<XTProfilePanelData.Entry> entries = view.entries;
         int end = Math.min(entries.size(), scroll + VISIBLE_ROWS);
-        int textColor = ColorUtils.guiTextColorGray.getColor();
+        int textColor = GuiColors.GuiTextColorGray.getColor();
 
         for (int index = scroll; index < end; index++) {
             int visible = index - scroll;
