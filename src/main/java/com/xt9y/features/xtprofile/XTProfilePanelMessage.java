@@ -1,15 +1,12 @@
 package com.xt9y.features.xtprofile;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import io.netty.buffer.ByteBuf;
 
-final class XTProfilePanelMessage implements IMessage {
+public final class XTProfilePanelMessage implements IMessage {
 
     private static final int MAX_ENTRIES = 256;
     private static final int MAX_STRING_LENGTH = 160;
@@ -18,7 +15,7 @@ final class XTProfilePanelMessage implements IMessage {
     XTProfilePanelData.View cpu = new XTProfilePanelData.View();
     XTProfilePanelData.View session = new XTProfilePanelData.View();
 
-    XTProfilePanelMessage() {}
+    public XTProfilePanelMessage() {}
 
     XTProfilePanelMessage(String cpuName, XTProfilePanelData.View cpu, XTProfilePanelData.View session) {
         this.cpuName = safe(cpuName);
@@ -95,7 +92,7 @@ final class XTProfilePanelMessage implements IMessage {
         return value == null ? "" : value;
     }
 
-    static final class Handler implements IMessageHandler<XTProfilePanelMessage, IMessage> {
+    public static final class Handler implements IMessageHandler<XTProfilePanelMessage, IMessage> {
 
         @Override
         public IMessage onMessage(XTProfilePanelMessage message, MessageContext ctx) {
