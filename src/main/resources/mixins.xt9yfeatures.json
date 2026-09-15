@@ -14,9 +14,7 @@
     "MixinMTETieredMachineBlockBaseGui",
     "MixinDualityInterface",
     "MixinTileInterface",
-    "MixinCommonBaseMetaTileEntityXTProfile",
-    "MixinCraftingCPUClusterXTProfile",
-    "MixinDualityInterfaceXTProfile"
+    "MixinCraftingCPUClusterXTProfile"
   ],
   "client": [
     "MixinVirtualMEPhantomSlotNonConsumable",
