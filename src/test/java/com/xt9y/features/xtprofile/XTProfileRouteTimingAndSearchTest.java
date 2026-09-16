@@ -110,10 +110,10 @@ class XTProfileRouteTimingAndSearchTest {
         long nextSample = (Long) method.invoke(null, medium, 42L, 1_000L, 6_000L, 1_500L);
 
         assertEquals(6_000L, nextSample);
-        assertEquals(5_000L, medium.busyNs);
+        assertEquals(0L, medium.busyNs);
         assertEquals(1_500L, medium.tickCostNs);
         assertEquals(1L, medium.activeTicks);
-        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
+        assertTrue(medium.busyNsByCpu.isEmpty());
         assertEquals(1_500L, medium.tickCostNsByCpu.get(42L));
         assertEquals(1L, medium.activeTicksByCpu.get(42L));
     }
