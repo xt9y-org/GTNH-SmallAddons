@@ -18,7 +18,10 @@ public abstract class MixinBetterLoadingScreenXTProfile {
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;func_110436_a()V"),
         require = 0)
     private void xtprofile$suppressBackgroundRefresh(Minecraft minecraft) {
-        if (XTProfileLoadingScreenCompat.shouldSuppressBackgroundResourceRefresh(Thread.currentThread().getName())) return;
+        if (XTProfileLoadingScreenCompat.shouldSuppressBackgroundResourceRefresh(
+            Thread.currentThread()
+                .getName()))
+            return;
         minecraft.refreshResources();
     }
 }
