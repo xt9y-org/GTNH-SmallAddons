@@ -28,12 +28,8 @@ class XTProfileRouteTimingAndSearchTest {
 
     @Test
     void activeMachineDispatchDoesNotResetTimingBoundary() throws Exception {
-        Method method = XTProfileRouteTracker.class.getDeclaredMethod(
-            "shouldResetTimingBoundary",
-            boolean.class,
-            long.class,
-            long.class,
-            boolean.class);
+        Method method = XTProfileRouteTracker.class
+            .getDeclaredMethod("shouldResetTimingBoundary", boolean.class, long.class, long.class, boolean.class);
         method.setAccessible(true);
 
         assertFalse((Boolean) method.invoke(null, true, 4L, 4L, true));
