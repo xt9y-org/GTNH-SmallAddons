@@ -12,14 +12,8 @@ class XTProfileRouteTimeAccountingTest {
         XTProfileIntervalUnion all = new XTProfileIntervalUnion();
         XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
-        XTProfileRouteTracker.accountCompletedLatency(
-            medium,
-            7L,
-            "medium:assline",
-            1_000_000_000L,
-            1_650_000_000L,
-            all,
-            cpu);
+        XTProfileRouteTracker
+            .accountCompletedLatency(medium, 7L, "medium:assline", 1_000_000_000L, 1_650_000_000L, all, cpu);
 
         assertEquals(650_000_000L, medium.busyNs);
         assertEquals(650_000_000L, medium.busyNsByCpu.get(7L));
@@ -33,22 +27,10 @@ class XTProfileRouteTimeAccountingTest {
         XTProfileIntervalUnion all = new XTProfileIntervalUnion();
         XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
-        XTProfileRouteTracker.accountCompletedLatency(
-            medium,
-            1L,
-            "medium:assline",
-            100_000_000L,
-            500_000_000L,
-            all,
-            cpu);
-        XTProfileRouteTracker.accountCompletedLatency(
-            medium,
-            1L,
-            "medium:assline",
-            300_000_000L,
-            700_000_000L,
-            all,
-            cpu);
+        XTProfileRouteTracker
+            .accountCompletedLatency(medium, 1L, "medium:assline", 100_000_000L, 500_000_000L, all, cpu);
+        XTProfileRouteTracker
+            .accountCompletedLatency(medium, 1L, "medium:assline", 300_000_000L, 700_000_000L, all, cpu);
 
         assertEquals(600_000_000L, medium.busyNs);
         assertEquals(600_000_000L, medium.busyNsByCpu.get(1L));
