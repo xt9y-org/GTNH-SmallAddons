@@ -84,8 +84,8 @@ final class XTProfileMachineResolver {
                         if (controllerTile != null) return controllerTile;
                     }
                 }
-            } catch (NoSuchFieldException ignored) {
-            } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException ignored) {}
+            } catch (NoSuchFieldException ignored) {} catch (ReflectiveOperationException | SecurityException
+                | IllegalArgumentException ignored) {}
             type = type.getSuperclass();
         }
         return null;
@@ -118,7 +118,8 @@ final class XTProfileMachineResolver {
 
     private static void indexController(MTEMultiBlockBase controller, TileEntity controllerTile,
         Map<String, WeakReference<TileEntity>> controllers) {
-        Set<IMetaTileEntity> indexed = java.util.Collections.newSetFromMap(new IdentityHashMap<IMetaTileEntity, Boolean>());
+        Set<IMetaTileEntity> indexed = java.util.Collections
+            .newSetFromMap(new IdentityHashMap<IMetaTileEntity, Boolean>());
 
         Class<?> type = controller.getClass();
         while (type != null && MTEMultiBlockBase.class.isAssignableFrom(type)) {
