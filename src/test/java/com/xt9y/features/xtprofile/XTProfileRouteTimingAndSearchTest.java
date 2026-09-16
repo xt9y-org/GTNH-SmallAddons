@@ -1,8 +1,10 @@
 package com.xt9y.features.xtprofile;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -37,6 +39,35 @@ class XTProfileRouteTimingAndSearchTest {
         assertTrue((Boolean) method.invoke(null, true, 4L, 4L, false));
         assertTrue((Boolean) method.invoke(null, false, 4L, 4L, true));
         assertTrue((Boolean) method.invoke(null, true, 4L, 5L, true));
+    }
+
+    @Test
+    void runningTickAccountsOneTickMachineBeforeEndOfTickInactiveState() throws Exception {
+        Method method;
+        try {
+            method = XTProfileRouteTracker.class.getDeclaredMethod(
+                "accountRunningTick",
+                XTProfileData.MediumRecord.class,
+                long.class,
+                long.class,
+                long.class,
+                long.class);
+        } catch (NoSuchMethodException missing) {
+            fail("missing running-tick accounting for one-tick multiblocks");
+            return;
+        }
+        method.setAccessible(true);
+
+        XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
+        long nextSample = (Long) method.invoke(null, medium, 42L, 1_000L, 6_000L, 1_500L);
+
+        assertEquals(6_000L, nextSample);
+        assertEquals(5_000L, medium.busyNs);
+        assertEquals(1_500L, medium.tickCostNs);
+        assertEquals(1L, medium.activeTicks);
+        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
+        assertEquals(1_500L, medium.tickCostNsByCpu.get(42L));
+        assertEquals(1L, medium.activeTicksByCpu.get(42L));
     }
 
     @Test
