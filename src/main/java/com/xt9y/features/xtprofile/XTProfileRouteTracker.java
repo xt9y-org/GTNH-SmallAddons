@@ -232,12 +232,6 @@ public final class XTProfileRouteTracker {
 
     static long accountRunningTick(XTProfileData.MediumRecord medium, long cpuId, long previousNs, long nowNs,
         long tickCostNs) {
-        long busyDelta = XTProfileStats.busyDelta(previousNs, nowNs, true);
-        if (busyDelta > 0) {
-            medium.busyNs += busyDelta;
-            if (cpuId != 0) add(medium.busyNsByCpu, cpuId, busyDelta);
-        }
-
         long safeTickCostNs = Math.max(0, tickCostNs);
         medium.tickCostNs += safeTickCostNs;
         medium.activeTicks++;
