@@ -22,7 +22,8 @@
     "MixinNEEPatternTerminalNonConsumable",
     "MixinVirtualMEPhantomSlotNonConsumable",
     "MixinVirtualMESlotNonConsumable",
-    "MixinGuiCraftingCPUXTProfile"
+    "MixinGuiCraftingCPUXTProfile",
+    "MixinBetterLoadingScreenXTProfile"
   ],
   "server": []
 }
