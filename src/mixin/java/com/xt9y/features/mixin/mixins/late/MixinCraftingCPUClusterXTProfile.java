@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.xt9y.features.xtprofile.XTProfileDispatchContext;
 import com.xt9y.features.xtprofile.XTProfileRouteTracker;
 
 import appeng.api.networking.crafting.ICraftingMedium;
@@ -25,10 +26,17 @@ public abstract class MixinCraftingCPUClusterXTProfile {
                 + "Lnet/minecraft/inventory/InventoryCrafting;)Z"))
     private boolean xtprofile$dispatch(ICraftingMedium medium, ICraftingPatternDetails pattern,
         InventoryCrafting inventory, Operation<Boolean> original) {
-        boolean pushed = original.call(medium, pattern, inventory);
-        if (pushed) {
-            XTProfileRouteTracker.INSTANCE.recordDispatch((CraftingCPUCluster) (Object) this, medium, pattern);
+        CraftingCPUCluster cpu = (CraftingCPUCluster) (Object) this;
+        XTProfileDispatchContext.begin(cpu, medium);
+        try {
+            boolean pushed = original.call(medium, pattern, inventory);
+            if (pushed) {
+                XTProfileRouteTracker.INSTANCE
+                    .recordDispatch(cpu, medium, pattern, XTProfileDispatchContext.target());
+            }
+            return pushed;
+        } finally {
+            XTProfileDispatchContext.end();
         }
-        return pushed;
     }
 }
