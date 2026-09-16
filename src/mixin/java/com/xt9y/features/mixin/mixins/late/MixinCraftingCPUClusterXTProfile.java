@@ -31,8 +31,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
         try {
             boolean pushed = original.call(medium, pattern, inventory);
             if (pushed) {
-                XTProfileRouteTracker.INSTANCE
-                    .recordDispatch(cpu, medium, pattern, XTProfileDispatchContext.target());
+                XTProfileRouteTracker.INSTANCE.recordDispatch(cpu, medium, pattern, XTProfileDispatchContext.target());
             }
             return pushed;
         } finally {
