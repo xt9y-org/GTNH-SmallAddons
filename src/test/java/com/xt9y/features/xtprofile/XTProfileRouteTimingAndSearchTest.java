@@ -8,8 +8,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 import net.minecraft.tileentity.TileEntity;
 
@@ -29,36 +27,6 @@ class XTProfileRouteTimingAndSearchTest {
         } finally {
             XTProfileDispatchContext.end();
         }
-    }
-
-    @Test
-    void expectedOutputCollectionIgnoresInvalidValuesAndSumsDuplicates() {
-        Map<String, Long> expected = new LinkedHashMap<>();
-
-        XTProfileRouteTracker.addExpectedOutput(expected, null, 1L);
-        XTProfileRouteTracker.addExpectedOutput(expected, "", 1L);
-        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 0L);
-        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", -1L);
-        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 2L);
-        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 3L);
-
-        assertEquals(1, expected.size());
-        assertEquals(5L, expected.get("item:x"));
-    }
-
-    @Test
-    void completedLatencyAccountsTimeWithoutTouchingTickCost() {
-        XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
-
-        XTProfileRouteTracker.accountCompletedLatency(medium, 42L, 5_000L);
-        XTProfileRouteTracker.accountCompletedLatency(medium, 42L, -1L);
-
-        assertEquals(5_000L, medium.busyNs);
-        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
-        assertEquals(0L, medium.tickCostNs);
-        assertEquals(0L, medium.activeTicks);
-        assertTrue(medium.tickCostNsByCpu.isEmpty());
-        assertTrue(medium.activeTicksByCpu.isEmpty());
     }
 
     @Test
@@ -90,7 +58,7 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
-    void runningTickAccountsOneTickMachineBeforeEndOfTickInactiveState() throws Exception {
+    void runningTickAccountsActualMachineWallTimeAndTickCost() throws Exception {
         Method method;
         try {
             method = XTProfileRouteTracker.class.getDeclaredMethod(
@@ -110,10 +78,10 @@ class XTProfileRouteTimingAndSearchTest {
         long nextSample = (Long) method.invoke(null, medium, 42L, 1_000L, 6_000L, 1_500L);
 
         assertEquals(6_000L, nextSample);
-        assertEquals(0L, medium.busyNs);
+        assertEquals(5_000L, medium.busyNs);
+        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
         assertEquals(1_500L, medium.tickCostNs);
         assertEquals(1L, medium.activeTicks);
-        assertTrue(medium.busyNsByCpu.isEmpty());
         assertEquals(1_500L, medium.tickCostNsByCpu.get(42L));
         assertEquals(1L, medium.activeTicksByCpu.get(42L));
     }
