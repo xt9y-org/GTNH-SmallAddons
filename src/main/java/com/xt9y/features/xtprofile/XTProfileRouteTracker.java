@@ -103,6 +103,25 @@ public final class XTProfileRouteTracker {
         }
     }
 
+    public void recordReturnedOutput(CraftingCPUCluster cpu, IAEStack<?> returnedStack) {
+        if (cpu == null || returnedStack == null || returnedStack.getStackSize() <= 0) return;
+
+        synchronized (this) {
+            if (!active) return;
+
+            long now = System.nanoTime();
+            long cpuId = cpuId(cpu, now);
+            String outputKey = XTProfileLabels.stackKey(returnedStack);
+            if (outputKey == null || outputKey.isEmpty()) return;
+
+            for (XTProfilePendingOperations.Completion completion : pendingOperations
+                .accept(cpuId, outputKey, returnedStack.getStackSize(), now)) {
+                XTProfileData.MediumRecord medium = media.get(completion.mediumId);
+                if (medium != null) accountCompletedLatency(medium, cpuId, completion.elapsedNs);
+            }
+        }
+    }
+
     synchronized XTProfilePanelMessage panelMessage(CraftingCPUCluster cpu) {
         long now = System.nanoTime();
         long cpuId = cpu == null ? 0 : cpuId(cpu, now);
@@ -227,6 +246,12 @@ public final class XTProfileRouteTracker {
             add(medium.activeTicksByCpu, cpuId, 1);
         }
         return nowNs;
+    }
+
+    static void accountCompletedLatency(XTProfileData.MediumRecord medium, long cpuId, long elapsedNs) {
+        long safeElapsedNs = Math.max(0, elapsedNs);
+        medium.busyNs += safeElapsedNs;
+        if (cpuId != 0) add(medium.busyNsByCpu, cpuId, safeElapsedNs);
     }
 
     static void addExpectedOutput(Map<String, Long> expected, String key, long amount) {
