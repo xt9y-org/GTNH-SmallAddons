@@ -92,14 +92,8 @@ public final class XTProfileRouteTracker {
             if (clock != null && pattern != null && !pattern.isCraftable()) {
                 Map<String, Long> expected = expectedOutputs(pattern);
                 if (!expected.isEmpty()) {
-                    pendingOperations.add(
-                        cpuId,
-                        mediumId,
-                        clock.id,
-                        now,
-                        clock.activeTicks,
-                        clock.tickCostNs,
-                        expected);
+                    pendingOperations
+                        .add(cpuId, mediumId, clock.id, now, clock.activeTicks, clock.tickCostNs, expected);
                 }
             }
         }
@@ -223,8 +217,7 @@ public final class XTProfileRouteTracker {
         int currentProgress = progress(machine);
         long currentRecipesDone = recipesDone(machine);
 
-        boolean progressChanged = clock.progressAtStart != Integer.MIN_VALUE
-            && currentProgress != Integer.MIN_VALUE
+        boolean progressChanged = clock.progressAtStart != Integer.MIN_VALUE && currentProgress != Integer.MIN_VALUE
             && currentProgress != clock.progressAtStart;
         boolean recipeCompleted = completedRecipe(clock.recipesDoneAtStart, currentRecipesDone);
         boolean activeStarted = !clock.activeAtStart && currentActive;
@@ -279,10 +272,7 @@ public final class XTProfileRouteTracker {
         if (addedCpuTicks > 0) {
             add(medium.busyNsByCpu, cpuId, addedCpuTicks * GT_TICK_NS);
             add(medium.activeTicksByCpu, cpuId, addedCpuTicks);
-            add(
-                medium.tickCostNsByCpu,
-                cpuId,
-                proportionalCost(operationTickCostNs, addedCpuTicks, spanTicks));
+            add(medium.tickCostNsByCpu, cpuId, proportionalCost(operationTickCostNs, addedCpuTicks, spanTicks));
         }
     }
 
