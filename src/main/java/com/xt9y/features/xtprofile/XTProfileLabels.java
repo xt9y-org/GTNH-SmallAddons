@@ -71,10 +71,12 @@ final class XTProfileLabels {
         String name = stackName(stack);
         String type = stack.getClass()
             .getName();
+        IAEStack<?> normalized = stack.copy();
+        normalized.setStackSize(1);
         String key = "stack:" + type
             + ":"
             + Integer.toHexString(
-                stack.toString()
+                normalized.toString()
                     .hashCode());
         return new StackInfo(key, name, type, 0, null, stack.getStackSize());
     }
