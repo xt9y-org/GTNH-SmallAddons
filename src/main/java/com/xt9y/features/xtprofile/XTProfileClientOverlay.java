@@ -1,5 +1,6 @@
 package com.xt9y.features.xtprofile;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -12,10 +13,12 @@ import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.ChatAllowedCharacters;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -39,9 +42,11 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private static final int PANEL_WIDTH = 176;
     private static final int PANEL_HEIGHT = 184;
     private static final int PANEL_GAP = 4;
-    private static final int ROW_TOP = 34;
-    private static final int ROW_HEIGHT = 15;
-    private static final int VISIBLE_ROWS = 9;
+    private static final int SEARCH_TOP = 29;
+    private static final int SEARCH_HEIGHT = 15;
+    private static final int ROW_TOP = 49;
+    private static final int ROW_HEIGHT = 19;
+    private static final int VISIBLE_ROWS = 7;
     private static final int CPU_TOGGLE_WIDTH = 30;
     private static final int ALL_TOGGLE_WIDTH = 24;
     private static final int CPU_BUTTON_ID = -4100;
@@ -63,6 +68,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private static final int SCROLLBAR_HEIGHT = VISIBLE_ROWS * ROW_HEIGHT;
 
     private static boolean initialized;
+    private static XTProfileClientOverlay instance;
 
     private int scroll;
     private boolean sessionScope;
@@ -73,13 +79,41 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private int selectedEntry = -1;
     private boolean scrollbarDragging;
     private boolean leftMouseDown;
+    private boolean searchFocused;
+    private String searchText = "";
 
     public static synchronized void init() {
         if (initialized) return;
         XTProfileClientOverlay overlay = new XTProfileClientOverlay();
+        instance = overlay;
         MinecraftForge.EVENT_BUS.register(overlay);
         API.registerNEIGuiHandler(overlay);
         initialized = true;
+    }
+
+    public static boolean handleSearchKey(char character, int key) {
+        XTProfileClientOverlay overlay = instance;
+        if (overlay == null || !overlay.searchFocused
+            || !(Minecraft.getMinecraft().currentScreen instanceof GuiCraftingCPU)) return false;
+
+        if (key == Keyboard.KEY_ESCAPE || key == Keyboard.KEY_RETURN || key == Keyboard.KEY_NUMPADENTER) {
+            overlay.searchFocused = false;
+            return true;
+        }
+
+        if (key == Keyboard.KEY_BACK) {
+            if (!overlay.searchText.isEmpty()) {
+                overlay.searchText = overlay.searchText.substring(0, overlay.searchText.length() - 1);
+                overlay.resetFilteredPosition();
+            }
+            return true;
+        }
+
+        if (ChatAllowedCharacters.isAllowedCharacter(character) && overlay.searchText.length() < 64) {
+            overlay.searchText += character;
+            overlay.resetFilteredPosition();
+        }
+        return true;
     }
 
     @SubscribeEvent
@@ -92,6 +126,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         selectedEntry = -1;
         scrollbarDragging = false;
         leftMouseDown = false;
+        searchFocused = false;
+        searchText = "";
     }
 
     @SubscribeEvent
@@ -109,7 +145,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 new OverlayHitButton(
                     ROW_BUTTON_BASE_ID - row,
                     panelLeft + 8,
-                    panelTop + ROW_TOP - 2 + row * ROW_HEIGHT,
+                    panelTop + ROW_TOP - 3 + row * ROW_HEIGHT,
                     SCROLLBAR_LEFT - 10,
                     ROW_HEIGHT));
         }
@@ -144,10 +180,11 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             return;
         }
 
+        List<XTProfilePanelData.Entry> entries = filteredEntries(view);
         int entryIndex = scroll + row;
-        if (entryIndex >= 0 && entryIndex < view.entries.size()) {
+        if (entryIndex >= 0 && entryIndex < entries.size()) {
             selectedEntry = entryIndex;
-            XTProfilePanelData.Entry entry = view.entries.get(entryIndex);
+            XTProfilePanelData.Entry entry = entries.get(entryIndex);
             if (GuiScreen.isShiftKeyDown() && entry.hasLocation) highlight(entry, Minecraft.getMinecraft());
         }
         event.setCanceled(true);
@@ -163,10 +200,11 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         try {
             drawBackground();
             drawHeader(message);
+            drawSearch();
 
             XTProfilePanelData.View view = currentView(message);
             if (view == null) {
-                drawCentered("Waiting for route data...", panelTop + 83, GuiColors.GuiTextColorGray.getColor());
+                drawCentered("Waiting for route data...", panelTop + 92, GuiColors.GuiTextColorGray.getColor());
                 return;
             }
 
@@ -176,11 +214,12 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 selectedEntry = -1;
             }
 
-            handleScrollInput(event.mouseX, event.mouseY, view.entries.size());
-            clampScroll(view.entries.size());
-            hoveredRow = rowAt(event.mouseX, event.mouseY, view.entries.size());
-            if (selectedEntry >= view.entries.size()) selectedEntry = -1;
-            drawRows(view);
+            List<XTProfilePanelData.Entry> entries = filteredEntries(view);
+            handlePointerInput(event.mouseX, event.mouseY, entries.size());
+            clampScroll(entries.size());
+            hoveredRow = rowAt(event.mouseX, event.mouseY, entries.size());
+            if (selectedEntry >= entries.size()) selectedEntry = -1;
+            drawRows(entries);
         } finally {
             GL11.glPopAttrib();
         }
@@ -213,20 +252,36 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, PANEL_WIDTH + 4, PANEL_HEIGHT + 4);
     }
 
-    private void handleScrollInput(int mouseX, int mouseY, int entryCount) {
-        boolean overPanel = inside(mouseX, mouseY, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT);
-        if (overPanel) {
+    private void handlePointerInput(int mouseX, int mouseY, int entryCount) {
+        boolean mouseDown = Mouse.isButtonDown(0);
+        boolean justPressed = mouseDown && !leftMouseDown;
+
+        if (justPressed) {
+            if (inside(mouseX, mouseY, panelLeft + 9, panelTop + SEARCH_TOP, SCROLLBAR_LEFT - 12, SEARCH_HEIGHT)) {
+                searchFocused = true;
+                selectedEntry = -1;
+            } else if (inside(mouseX, mouseY, panelLeft, panelTop, PANEL_WIDTH, PANEL_HEIGHT)) {
+                searchFocused = false;
+            }
+        }
+
+        boolean overRows = inside(
+            mouseX,
+            mouseY,
+            panelLeft + 8,
+            panelTop + ROW_TOP - 3,
+            SCROLLBAR_LEFT - 5,
+            VISIBLE_ROWS * ROW_HEIGHT);
+        if (overRows) {
             int wheel = Mouse.getDWheel();
             if (wheel != 0) scroll = XTProfileScroll.wheel(scroll, entryCount, VISIBLE_ROWS, wheel);
         }
 
-        boolean mouseDown = Mouse.isButtonDown(0);
         if (entryCount > VISIBLE_ROWS) {
             int trackLeft = panelLeft + SCROLLBAR_LEFT;
             int trackTop = panelTop + SCROLLBAR_TOP;
 
-            if (mouseDown && !leftMouseDown
-                && inside(mouseX, mouseY, trackLeft, trackTop, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT)) {
+            if (justPressed && inside(mouseX, mouseY, trackLeft, trackTop, SCROLLBAR_WIDTH, SCROLLBAR_HEIGHT)) {
                 int thumbTop = XTProfileScroll.thumbTop(trackTop, SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS, scroll);
                 int thumbHeight = XTProfileScroll.thumbHeight(SCROLLBAR_HEIGHT, entryCount, VISIBLE_ROWS);
                 if (mouseY >= thumbTop && mouseY < thumbTop + thumbHeight) {
@@ -272,9 +327,9 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         Gui.drawRect(right - 3, panelTop + 2, right - 2, bottom - 2, PANEL_SHADOW);
         Gui.drawRect(panelLeft + 2, bottom - 3, right - 2, bottom - 2, PANEL_SHADOW);
 
-        Gui.drawRect(panelLeft + 6, panelTop + 25, right - 7, panelTop + 173, LIST_BORDER);
-        Gui.drawRect(panelLeft + 7, panelTop + 26, right - 8, panelTop + 172, LIST_INNER_BORDER);
-        Gui.drawRect(panelLeft + 8, panelTop + 27, right - 9, panelTop + 171, LIST_BG);
+        Gui.drawRect(panelLeft + 6, panelTop + 25, right - 7, bottom - 4, LIST_BORDER);
+        Gui.drawRect(panelLeft + 7, panelTop + 26, right - 8, bottom - 5, LIST_INNER_BORDER);
+        Gui.drawRect(panelLeft + 8, panelTop + 27, right - 9, bottom - 6, LIST_BG);
     }
 
     private void drawHeader(XTProfilePanelMessage message) {
@@ -288,14 +343,38 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawToggle(mc, allLeft, panelTop + 4, ALL_TOGGLE_WIDTH, "All", sessionScope);
 
         String scope = message == null ? "Routes" : sessionScope ? "Session" : message.cpuName;
-        mc.fontRenderer.drawString(fit(scope, 82, mc), panelLeft + 8, panelTop + 16, DIM_TEXT);
-        drawRight(mc, "Time", panelLeft + TIME_RIGHT, panelTop + 16, DIM_TEXT);
-        drawRight(mc, "TPS", panelLeft + TPS_RIGHT, panelTop + 16, DIM_TEXT);
+        mc.fontRenderer.drawString(fit(scope, 82, mc), panelLeft + 8, panelTop + 18, DIM_TEXT);
+        drawRight(mc, "Time", panelLeft + TIME_RIGHT, panelTop + 18, DIM_TEXT);
+        drawRight(mc, "TPS", panelLeft + TPS_RIGHT, panelTop + 18, DIM_TEXT);
     }
 
-    private void drawRows(XTProfilePanelData.View view) {
+    private void drawSearch() {
         Minecraft mc = Minecraft.getMinecraft();
-        List<XTProfilePanelData.Entry> entries = view.entries;
+        int left = panelLeft + 9;
+        int top = panelTop + SEARCH_TOP;
+        int right = panelLeft + SCROLLBAR_LEFT - 3;
+        int bottom = top + SEARCH_HEIGHT;
+
+        Gui.drawRect(left, top, right, bottom, searchFocused ? PANEL_BORDER : PANEL_SHADOW);
+        Gui.drawRect(left + 1, top + 1, right - 1, bottom - 1, LIST_BG);
+
+        String shown = searchText;
+        int color = GuiColors.GuiTextColorGray.getColor();
+        if (shown.isEmpty() && !searchFocused) {
+            shown = "Search CRIB / machine...";
+            color = DIM_TEXT;
+        }
+        shown = fitSearch(shown, right - left - 6, mc);
+        mc.fontRenderer.drawString(shown, left + 3, top + 3, color);
+
+        if (searchFocused && (System.currentTimeMillis() / 500L & 1L) == 0L) {
+            int caretX = left + 3 + mc.fontRenderer.getStringWidth(shown);
+            if (caretX < right - 2) mc.fontRenderer.drawString("_", caretX, top + 3, color);
+        }
+    }
+
+    private void drawRows(List<XTProfilePanelData.Entry> entries) {
+        Minecraft mc = Minecraft.getMinecraft();
         int end = Math.min(entries.size(), scroll + VISIBLE_ROWS);
         int textColor = GuiColors.GuiTextColorGray.getColor();
         int rowRight = panelLeft + SCROLLBAR_LEFT - 2;
@@ -308,22 +387,22 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             boolean selected = index == selectedEntry;
 
             if (selected) {
-                Gui.drawRect(panelLeft + 8, y - 2, rowRight, y + 12, 0x55808080);
+                Gui.drawRect(panelLeft + 8, y - 3, rowRight, y + 14, 0x55808080);
             } else if (hovered) {
                 Gui.drawRect(
                     panelLeft + 8,
-                    y - 2,
+                    y - 3,
                     rowRight,
-                    y + 12,
+                    y + 14,
                     GuiColors.CraftingDiagnosticTerminalRowHover.getColor());
             }
 
             if (visible > 0) {
                 Gui.drawRect(
                     panelLeft + 9,
-                    y - 3,
+                    y - 4,
                     rowRight - 1,
-                    y - 2,
+                    y - 3,
                     GuiColors.CraftingDiagnosticTerminalLine.getColor());
             }
 
@@ -336,30 +415,9 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawScrollbar(entries.size());
 
         if (entries.isEmpty()) {
-            drawCentered(
-                sessionScope ? "No session routes yet" : "No routes for this CPU yet",
-                panelTop + 83,
-                textColor);
-        }
-
-        XTProfilePanelData.Entry infoEntry = null;
-        if (selectedEntry >= 0 && selectedEntry < entries.size()) {
-            infoEntry = entries.get(selectedEntry);
-        } else if (hoveredRow >= 0 && scroll + hoveredRow < entries.size()) {
-            infoEntry = entries.get(scroll + hoveredRow);
-        }
-
-        if (infoEntry != null) {
-            int infoY = panelTop + 174;
-            if (!infoEntry.hasLocation) {
-                mc.fontRenderer.drawString("No world position", panelLeft + 8, infoY, DIM_TEXT);
-            }
-
-            if (infoEntry.machine != null && !infoEntry.machine.isEmpty()) {
-                String machine = fit(infoEntry.machine, 92, mc);
-                int x = panelLeft + PANEL_WIDTH - 8 - mc.fontRenderer.getStringWidth(machine);
-                mc.fontRenderer.drawString(machine, x, infoY, DIM_TEXT);
-            }
+            String empty = searchText.isEmpty() ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
+                : "No matching routes";
+            drawCentered(empty, panelTop + 101, textColor);
         }
     }
 
@@ -414,6 +472,21 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         return sessionScope ? message.session : message.cpu;
     }
 
+    private List<XTProfilePanelData.Entry> filteredEntries(XTProfilePanelData.View view) {
+        if (searchText.isEmpty()) return view.entries;
+        List<XTProfilePanelData.Entry> filtered = new ArrayList<>();
+        for (XTProfilePanelData.Entry entry : view.entries) {
+            if (XTProfileSearch.matches(entry.name, entry.machine, searchText)) filtered.add(entry);
+        }
+        return filtered;
+    }
+
+    private void resetFilteredPosition() {
+        scroll = 0;
+        hoveredRow = -1;
+        selectedEntry = -1;
+    }
+
     private void position(GuiScreen gui) {
         int cpuLeft = (gui.width - CPU_WIDTH) / 2;
         int cpuTop = (gui.height - CPU_HEIGHT) / 2;
@@ -424,7 +497,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
     private int rowAt(int mouseX, int mouseY, int entryCount) {
         int left = panelLeft + 8;
-        int top = panelTop + ROW_TOP - 2;
+        int top = panelTop + ROW_TOP - 3;
         int height = VISIBLE_ROWS * ROW_HEIGHT;
         if (!inside(mouseX, mouseY, left, top, SCROLLBAR_LEFT - 10, height)) return -1;
         int row = (mouseY - top) / ROW_HEIGHT;
@@ -449,6 +522,13 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         if (mc.fontRenderer.getStringWidth(safe) <= width) return safe;
         return mc.fontRenderer.trimStringToWidth(safe, Math.max(0, width - mc.fontRenderer.getStringWidth("...")))
             + "...";
+    }
+
+    private static String fitSearch(String value, int width, Minecraft mc) {
+        if (mc.fontRenderer.getStringWidth(value) <= width) return value;
+        String reversed = new StringBuilder(value).reverse().toString();
+        String tail = mc.fontRenderer.trimStringToWidth(reversed, width, true);
+        return new StringBuilder(tail).reverse().toString();
     }
 
     private static String craftTime(double millis) {
