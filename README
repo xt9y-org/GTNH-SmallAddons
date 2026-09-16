@@ -25,3 +25,13 @@ mark --> shift + right-click pattern input
 requires --> NC item in ME storage
 result --> reserved once, not consumed, returned after craft
 wildcard + NC --> supported
+
+XTProfile
+start --> /xt9y profile start
+controls --> /xt9y profile [start|status|reset|stop]
+CPU --> per-crafting-CPU Interface / CRIB / machine routes
+All --> complete profiling session
+Time --> AE2 processing dispatch until expected output returns
+parallel --> overlapping route operations are not double-counted
+TPS --> separate GregTech machine tick-cost sampling
+search --> Interface / CRIB / machine names
