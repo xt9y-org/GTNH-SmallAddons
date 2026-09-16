@@ -4,11 +4,17 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.xt9y.features.mte.MTELinkedInputHatch;
+import com.xt9y.features.xtprofile.XTProfileClientOverlay;
+import com.xt9y.features.xtprofile.XTProfileNetwork;
+import com.xt9y.features.xtprofile.XTProfileRouteTracker;
 
+import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.event.FMLServerStoppingEvent;
 import gregtech.api.GregTechAPI;
 
 @Mod(
@@ -41,8 +47,25 @@ public class XT9YFeatures {
     public void init(FMLInitializationEvent event) {
         WildcardToggleHandler.init();
         WildcardTooltipHandler.init();
+        XTProfileNetwork.init();
+        if (FMLCommonHandler.instance()
+            .getSide()
+            .isClient()) XTProfileClientOverlay.init();
+        FMLCommonHandler.instance()
+            .bus()
+            .register(XTProfileRouteTracker.INSTANCE);
     }
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {}
+
+    @Mod.EventHandler
+    public void serverStarting(FMLServerStartingEvent event) {
+        XTProfileRouteTracker.INSTANCE.startSession();
+    }
+
+    @Mod.EventHandler
+    public void serverStopping(FMLServerStoppingEvent event) {
+        XTProfileRouteTracker.INSTANCE.stopSession();
+    }
 }
