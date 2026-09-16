@@ -415,7 +415,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawScrollbar(entries.size());
 
         if (entries.isEmpty()) {
-            String empty = searchText.isEmpty() ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
+            String empty = searchText.isEmpty()
+                ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
                 : "No matching routes";
             drawCentered(empty, panelTop + 101, textColor);
         }
@@ -526,9 +527,11 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
     private static String fitSearch(String value, int width, Minecraft mc) {
         if (mc.fontRenderer.getStringWidth(value) <= width) return value;
-        String reversed = new StringBuilder(value).reverse().toString();
+        String reversed = new StringBuilder(value).reverse()
+            .toString();
         String tail = mc.fontRenderer.trimStringToWidth(reversed, width, true);
-        return new StringBuilder(tail).reverse().toString();
+        return new StringBuilder(tail).reverse()
+            .toString();
     }
 
     private static String craftTime(double millis) {
