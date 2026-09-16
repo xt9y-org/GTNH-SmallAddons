@@ -44,14 +44,7 @@ final class XTProfilePendingOperations {
         }
         if (!remaining.isEmpty()) {
             operations.add(
-                new Operation(
-                    cpuId,
-                    mediumId,
-                    machineId,
-                    startedNs,
-                    startedActiveTicks,
-                    startedTickCostNs,
-                    remaining));
+                new Operation(cpuId, mediumId, machineId, startedNs, startedActiveTicks, startedTickCostNs, remaining));
         }
     }
 
