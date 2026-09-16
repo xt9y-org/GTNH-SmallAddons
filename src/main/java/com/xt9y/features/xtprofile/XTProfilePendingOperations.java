@@ -11,10 +11,16 @@ final class XTProfilePendingOperations {
     static final class Completion {
 
         final String mediumId;
+        final String machineId;
+        final long startedActiveTicks;
+        final long startedTickCostNs;
         final long elapsedNs;
 
-        Completion(String mediumId, long elapsedNs) {
+        Completion(String mediumId, String machineId, long startedActiveTicks, long startedTickCostNs, long elapsedNs) {
             this.mediumId = mediumId;
+            this.machineId = machineId;
+            this.startedActiveTicks = startedActiveTicks;
+            this.startedTickCostNs = startedTickCostNs;
             this.elapsedNs = elapsedNs;
         }
     }
@@ -22,6 +28,11 @@ final class XTProfilePendingOperations {
     private final List<Operation> operations = new ArrayList<>();
 
     void add(long cpuId, String mediumId, long startedNs, Map<String, Long> outputs) {
+        add(cpuId, mediumId, null, startedNs, 0, 0, outputs);
+    }
+
+    void add(long cpuId, String mediumId, String machineId, long startedNs, long startedActiveTicks,
+        long startedTickCostNs, Map<String, Long> outputs) {
         if (outputs == null || outputs.isEmpty()) return;
 
         Map<String, Long> remaining = new LinkedHashMap<>();
@@ -31,7 +42,17 @@ final class XTProfilePendingOperations {
             if (key == null || key.isEmpty() || amount == null || amount <= 0) continue;
             remaining.put(key, amount);
         }
-        if (!remaining.isEmpty()) operations.add(new Operation(cpuId, mediumId, startedNs, remaining));
+        if (!remaining.isEmpty()) {
+            operations.add(
+                new Operation(
+                    cpuId,
+                    mediumId,
+                    machineId,
+                    startedNs,
+                    startedActiveTicks,
+                    startedTickCostNs,
+                    remaining));
+        }
     }
 
     List<Completion> accept(long cpuId, String outputKey, long amount, long returnedNs) {
@@ -55,7 +76,13 @@ final class XTProfilePendingOperations {
 
             if (operation.remaining.isEmpty()) {
                 iterator.remove();
-                completed.add(new Completion(operation.mediumId, Math.max(0, returnedNs - operation.startedNs)));
+                completed.add(
+                    new Completion(
+                        operation.mediumId,
+                        operation.machineId,
+                        operation.startedActiveTicks,
+                        operation.startedTickCostNs,
+                        Math.max(0, returnedNs - operation.startedNs)));
             }
         }
         return completed;
@@ -73,13 +100,20 @@ final class XTProfilePendingOperations {
 
         final long cpuId;
         final String mediumId;
+        final String machineId;
         final long startedNs;
+        final long startedActiveTicks;
+        final long startedTickCostNs;
         final Map<String, Long> remaining;
 
-        Operation(long cpuId, String mediumId, long startedNs, Map<String, Long> remaining) {
+        Operation(long cpuId, String mediumId, String machineId, long startedNs, long startedActiveTicks,
+            long startedTickCostNs, Map<String, Long> remaining) {
             this.cpuId = cpuId;
             this.mediumId = mediumId;
+            this.machineId = machineId;
             this.startedNs = startedNs;
+            this.startedActiveTicks = startedActiveTicks;
+            this.startedTickCostNs = startedTickCostNs;
             this.remaining = remaining;
         }
     }
