@@ -19,12 +19,18 @@ public final class XTProfileDispatchContext {
         if (context == null) return;
 
         context.recordedTarget = true;
+        context.target = target;
         XTProfileManager.INSTANCE.recordTarget(context.cpu, context.medium, target, pattern);
     }
 
     public static boolean hasRecordedTarget() {
         Context context = CURRENT.get();
         return context != null && context.recordedTarget;
+    }
+
+    static TileEntity target() {
+        Context context = CURRENT.get();
+        return context == null ? null : context.target;
     }
 
     public static void end() {
@@ -38,6 +44,7 @@ public final class XTProfileDispatchContext {
         final CraftingCPUCluster cpu;
         final ICraftingMedium medium;
         boolean recordedTarget;
+        TileEntity target;
 
         Context(CraftingCPUCluster cpu, ICraftingMedium medium) {
             this.cpu = cpu;
