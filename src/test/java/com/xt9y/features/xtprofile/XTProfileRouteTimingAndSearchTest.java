@@ -47,6 +47,21 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
+    void completedLatencyAccountsTimeWithoutTouchingTickCost() {
+        XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
+
+        XTProfileRouteTracker.accountCompletedLatency(medium, 42L, 5_000L);
+        XTProfileRouteTracker.accountCompletedLatency(medium, 42L, -1L);
+
+        assertEquals(5_000L, medium.busyNs);
+        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
+        assertEquals(0L, medium.tickCostNs);
+        assertEquals(0L, medium.activeTicks);
+        assertTrue(medium.tickCostNsByCpu.isEmpty());
+        assertTrue(medium.activeTicksByCpu.isEmpty());
+    }
+
+    @Test
     void activeMachineDispatchDoesNotResetTimingBoundary() throws Exception {
         Method method = XTProfileRouteTracker.class
             .getDeclaredMethod("shouldResetTimingBoundary", boolean.class, long.class, long.class, boolean.class);
