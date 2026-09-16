@@ -12,7 +12,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 import appeng.api.networking.crafting.ICraftingLink;
 import appeng.api.networking.crafting.ICraftingMedium;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
-import appeng.api.storage.data.IAEStack;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
@@ -31,9 +30,6 @@ public final class XTProfileRouteTracker {
     private final WeakHashMap<CraftingCPUCluster, String> cpuCraftIds = new WeakHashMap<>();
     private final Map<String, XTProfileData.MediumRecord> media = new LinkedHashMap<>();
     private final Map<String, TimingTarget> timingTargets = new LinkedHashMap<>();
-    private final XTProfilePendingOperations pendingOperations = new XTProfilePendingOperations();
-    private final XTProfileIntervalUnion completedIntervals = new XTProfileIntervalUnion();
-    private final Map<Long, XTProfileIntervalUnion> completedIntervalsByCpu = new LinkedHashMap<>();
 
     private boolean active;
     private long nextCpuId = 1;
@@ -87,55 +83,6 @@ public final class XTProfileRouteTracker {
             add(record.dispatchesByCpu, cpuId, 1);
             updateLocation(record, medium);
             bindTimingTarget(record, medium, exactTarget, cpuId, now);
-
-            if (pattern != null && !pattern.isCraftable()) {
-                Map<String, Long> expected = new LinkedHashMap<>();
-                IAEStack<?>[] outputs = pattern.getCondensedAEOutputs();
-                if (outputs != null) {
-                    for (IAEStack<?> expectedOutput : outputs) {
-                        if (expectedOutput == null) continue;
-                        addExpectedOutput(
-                            expected,
-                            XTProfileLabels.stackKey(expectedOutput),
-                            expectedOutput.getStackSize());
-                    }
-                }
-                if (!expected.isEmpty()) pendingOperations.add(cpuId, mediumId, now, expected);
-            }
-        }
-    }
-
-    public void recordReturnedOutput(CraftingCPUCluster cpu, IAEStack<?> returnedStack) {
-        if (cpu == null || returnedStack == null || returnedStack.getStackSize() <= 0) return;
-
-        synchronized (this) {
-            if (!active) return;
-
-            long now = System.nanoTime();
-            long cpuId = cpuId(cpu, now);
-            String outputKey = XTProfileLabels.stackKey(returnedStack);
-            if (outputKey == null || outputKey.isEmpty()) return;
-
-            XTProfileIntervalUnion cpuIntervals = completedIntervalsByCpu.get(cpuId);
-            if (cpuIntervals == null) {
-                cpuIntervals = new XTProfileIntervalUnion();
-                completedIntervalsByCpu.put(cpuId, cpuIntervals);
-            }
-
-            for (XTProfilePendingOperations.Completion completion : pendingOperations
-                .accept(cpuId, outputKey, returnedStack.getStackSize(), now)) {
-                XTProfileData.MediumRecord medium = media.get(completion.mediumId);
-                if (medium != null) {
-                    accountCompletedInterval(
-                        medium,
-                        cpuId,
-                        completion.mediumId,
-                        now - completion.elapsedNs,
-                        now,
-                        completedIntervals,
-                        cpuIntervals);
-                }
-            }
         }
     }
 
@@ -249,34 +196,17 @@ public final class XTProfileRouteTracker {
 
     static long accountRunningTick(XTProfileData.MediumRecord medium, long cpuId, long previousNs, long nowNs,
         long tickCostNs) {
+        long busyNs = previousNs <= 0 ? 0 : Math.max(0, nowNs - previousNs);
         long safeTickCostNs = Math.max(0, tickCostNs);
+        medium.busyNs += busyNs;
         medium.tickCostNs += safeTickCostNs;
         medium.activeTicks++;
         if (cpuId != 0) {
+            add(medium.busyNsByCpu, cpuId, busyNs);
             add(medium.tickCostNsByCpu, cpuId, safeTickCostNs);
             add(medium.activeTicksByCpu, cpuId, 1);
         }
         return nowNs;
-    }
-
-    static void accountCompletedLatency(XTProfileData.MediumRecord medium, long cpuId, long elapsedNs) {
-        long safeElapsedNs = Math.max(0, elapsedNs);
-        medium.busyNs += safeElapsedNs;
-        if (cpuId != 0) add(medium.busyNsByCpu, cpuId, safeElapsedNs);
-    }
-
-    static void accountCompletedInterval(XTProfileData.MediumRecord medium, long cpuId, String mediumId, long startedNs,
-        long returnedNs, XTProfileIntervalUnion allIntervals, XTProfileIntervalUnion cpuIntervals) {
-        medium.busyNs += allIntervals.add(mediumId, startedNs, returnedNs);
-        if (cpuId != 0 && cpuIntervals != null) {
-            add(medium.busyNsByCpu, cpuId, cpuIntervals.add(mediumId, startedNs, returnedNs));
-        }
-    }
-
-    static void addExpectedOutput(Map<String, Long> expected, String key, long amount) {
-        if (expected == null || key == null || key.isEmpty() || amount <= 0) return;
-        Long previous = expected.get(key);
-        expected.put(key, (previous == null ? 0L : previous) + amount);
     }
 
     private static long recipesDone(IGregTechTileEntity machine) {
@@ -327,8 +257,6 @@ public final class XTProfileRouteTracker {
 
         String previousCraftId = cpuCraftIds.get(cpu);
         if (isNewCraft(previousCraftId, currentCraftId, cpu.isBusy())) {
-            pendingOperations.clearCpu(existing);
-            completedIntervalsByCpu.remove(existing);
             resetCpuMetrics(media.values(), existing);
             resetTimingBoundary(existing, now);
         }
@@ -384,9 +312,6 @@ public final class XTProfileRouteTracker {
         cpuCraftIds.clear();
         media.clear();
         timingTargets.clear();
-        pendingOperations.clear();
-        completedIntervals.clear();
-        completedIntervalsByCpu.clear();
         XTProfileMachineResolver.clear();
         nextCpuId = 1;
         ticks = 0;
