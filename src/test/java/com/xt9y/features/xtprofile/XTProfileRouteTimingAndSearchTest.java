@@ -61,7 +61,9 @@ class XTProfileRouteTimingAndSearchTest {
         assertTrue((Boolean) method.invoke(null, "CRIB #4", "PCB Factory", ""));
     }
 
-    private interface ControllerMarker {}
+    private interface ControllerMarker {
+    }
 
-    private static final class ControllerMarkerImpl implements ControllerMarker {}
+    private static final class ControllerMarkerImpl implements ControllerMarker {
+    }
 }
