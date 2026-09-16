@@ -126,7 +126,7 @@ public final class XTProfileRouteTracker {
         }
 
         IGregTechTileEntity gregTech = (IGregTechTileEntity) machine;
-        boolean machineActive = gregTech.isActive();
+        boolean machineActive = machineRunning(gregTech);
         boolean sameMachine = previous == machine;
         boolean resetBoundary = shouldResetTimingBoundary(sameMachine, previousCpuId, cpuId, machineActive);
         if (resetBoundary) {
@@ -163,7 +163,7 @@ public final class XTProfileRouteTracker {
 
             if (refreshTiming || completedRecipe) target.timing = XTProfileStats.summarize(machine.getTimeStatistics());
 
-            boolean machineActive = machine.isActive();
+            boolean machineActive = machineRunning(machine);
             if (machineActive || completedRecipe) {
                 target.lastSampleNs = accountRunningTick(
                     medium,
@@ -175,6 +175,18 @@ public final class XTProfileRouteTracker {
                 target.lastSampleNs = now;
             }
         }
+    }
+
+    static boolean machineRunning(boolean active, int maxProgressTime) {
+        return active || maxProgressTime > 0;
+    }
+
+    private static boolean machineRunning(IGregTechTileEntity machine) {
+        IMetaTileEntity metaTile = machine.getMetaTileEntity();
+        int maxProgressTime = metaTile instanceof MTEMultiBlockBase
+            ? ((MTEMultiBlockBase) metaTile).getMaxProgresstime()
+            : 0;
+        return machineRunning(machine.isActive(), maxProgressTime);
     }
 
     static boolean completedRecipe(long previousRecipesDone, long currentRecipesDone) {
