@@ -265,8 +265,8 @@ public final class XTProfileRouteTracker {
         if (cpuId != 0) add(medium.busyNsByCpu, cpuId, safeElapsedNs);
     }
 
-    static void accountCompletedInterval(XTProfileData.MediumRecord medium, long cpuId, String mediumId,
-        long startedNs, long returnedNs, XTProfileIntervalUnion allIntervals, XTProfileIntervalUnion cpuIntervals) {
+    static void accountCompletedInterval(XTProfileData.MediumRecord medium, long cpuId, String mediumId, long startedNs,
+        long returnedNs, XTProfileIntervalUnion allIntervals, XTProfileIntervalUnion cpuIntervals) {
         medium.busyNs += allIntervals.add(mediumId, startedNs, returnedNs);
         if (cpuId != 0 && cpuIntervals != null) {
             add(medium.busyNsByCpu, cpuId, cpuIntervals.add(mediumId, startedNs, returnedNs));
