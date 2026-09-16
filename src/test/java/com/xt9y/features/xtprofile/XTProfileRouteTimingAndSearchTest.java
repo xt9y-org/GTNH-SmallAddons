@@ -38,6 +38,17 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
+    void returnedOutputCanUseProcessingMarkBeforeControllerStateChanges() {
+        assertTrue(XTProfileRouteTracker.shouldAccountMachineTick(true, false, false, false));
+    }
+
+    @Test
+    void endOfTickDoesNotChargeAProcessingMarkWithoutRuntimeEvidence() {
+        assertFalse(XTProfileRouteTracker.shouldAccountMachineTick(true, false, true, false));
+        assertTrue(XTProfileRouteTracker.shouldAccountMachineTick(true, false, true, true));
+    }
+
+    @Test
     void completedRecipeDetectsMonotonicRecipeCounterAdvance() {
         assertTrue(XTProfileRouteTracker.completedRecipe(4L, 5L));
         assertFalse(XTProfileRouteTracker.completedRecipe(4L, 4L));
