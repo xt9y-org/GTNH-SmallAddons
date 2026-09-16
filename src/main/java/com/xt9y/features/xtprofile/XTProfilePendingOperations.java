@@ -14,14 +14,23 @@ final class XTProfilePendingOperations {
         final String machineId;
         final long startedActiveTicks;
         final long startedTickCostNs;
+        final long startedNs;
+        final long completedNs;
         final long elapsedNs;
 
         Completion(String mediumId, String machineId, long startedActiveTicks, long startedTickCostNs, long elapsedNs) {
+            this(mediumId, machineId, startedActiveTicks, startedTickCostNs, 0L, Math.max(0L, elapsedNs));
+        }
+
+        Completion(String mediumId, String machineId, long startedActiveTicks, long startedTickCostNs, long startedNs,
+            long completedNs) {
             this.mediumId = mediumId;
             this.machineId = machineId;
             this.startedActiveTicks = startedActiveTicks;
             this.startedTickCostNs = startedTickCostNs;
-            this.elapsedNs = elapsedNs;
+            this.startedNs = startedNs;
+            this.completedNs = Math.max(startedNs, completedNs);
+            this.elapsedNs = Math.max(0, this.completedNs - startedNs);
         }
     }
 
@@ -75,7 +84,8 @@ final class XTProfilePendingOperations {
                         operation.machineId,
                         operation.startedActiveTicks,
                         operation.startedTickCostNs,
-                        Math.max(0, returnedNs - operation.startedNs)));
+                        operation.startedNs,
+                        returnedNs));
             }
         }
         return completed;
