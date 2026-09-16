@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import net.minecraft.tileentity.TileEntity;
 
@@ -27,6 +29,21 @@ class XTProfileRouteTimingAndSearchTest {
         } finally {
             XTProfileDispatchContext.end();
         }
+    }
+
+    @Test
+    void expectedOutputCollectionIgnoresInvalidValuesAndSumsDuplicates() {
+        Map<String, Long> expected = new LinkedHashMap<>();
+
+        XTProfileRouteTracker.addExpectedOutput(expected, null, 1L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "", 1L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 0L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", -1L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 2L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:x", 3L);
+
+        assertEquals(1, expected.size());
+        assertEquals(5L, expected.get("item:x"));
     }
 
     @Test
