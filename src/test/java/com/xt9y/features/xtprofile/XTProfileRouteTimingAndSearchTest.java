@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 import net.minecraft.tileentity.TileEntity;
 
@@ -39,6 +40,16 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
+    void resolverCanPickControllerFromDirectWatcherList() throws Exception {
+        ControllerMarker expected = new ControllerMarkerImpl();
+        Method method = XTProfileMachineResolver.class.getDeclaredMethod("firstInstance", Iterable.class, Class.class);
+        method.setAccessible(true);
+
+        Object resolved = method.invoke(null, Arrays.asList("not a controller", expected), ControllerMarker.class);
+        assertSame(expected, resolved);
+    }
+
+    @Test
     void routeSearchMatchesInterfaceOrMachineName() throws Exception {
         Class<?> search = Class.forName("com.xt9y.features.xtprofile.XTProfileSearch");
         Method method = search.getDeclaredMethod("matches", String.class, String.class, String.class);
@@ -49,4 +60,8 @@ class XTProfileRouteTimingAndSearchTest {
         assertFalse((Boolean) method.invoke(null, "CRIB #4", "PCB Factory", "lathe"));
         assertTrue((Boolean) method.invoke(null, "CRIB #4", "PCB Factory", ""));
     }
+
+    private interface ControllerMarker {}
+
+    private static final class ControllerMarkerImpl implements ControllerMarker {}
 }
