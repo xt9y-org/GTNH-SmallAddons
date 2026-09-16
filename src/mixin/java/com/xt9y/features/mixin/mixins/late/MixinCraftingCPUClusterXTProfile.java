@@ -44,7 +44,6 @@ public abstract class MixinCraftingCPUClusterXTProfile {
 
     @Inject(method = "recordReturnedOutputs", at = @At("HEAD"))
     private void xtprofile$returnedOutput(IAEStack<?> returnedStack, CallbackInfo ci) {
-        XTProfileRouteTracker.INSTANCE
-            .recordReturnedOutput((CraftingCPUCluster) (Object) this, returnedStack);
+        XTProfileRouteTracker.INSTANCE.recordReturnedOutput((CraftingCPUCluster) (Object) this, returnedStack);
     }
 }
