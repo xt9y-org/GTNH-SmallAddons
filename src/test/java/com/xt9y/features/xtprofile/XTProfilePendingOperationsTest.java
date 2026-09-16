@@ -23,6 +23,8 @@ class XTProfilePendingOperationsTest {
 
         assertEquals(1, done.size());
         assertEquals("medium:a", done.get(0).mediumId);
+        assertEquals(1_000L, done.get(0).startedNs);
+        assertEquals(6_000L, done.get(0).completedNs);
         assertEquals(5_000L, done.get(0).elapsedNs);
     }
 
@@ -44,6 +46,8 @@ class XTProfilePendingOperationsTest {
 
         assertEquals(1, done.size());
         assertEquals("medium:assline", done.get(0).mediumId);
+        assertEquals(10L, done.get(0).startedNs);
+        assertEquals(40L, done.get(0).completedNs);
         assertEquals(30L, done.get(0).elapsedNs);
     }
 
@@ -112,6 +116,8 @@ class XTProfilePendingOperationsTest {
         assertEquals("machine:a", done.machineId);
         assertEquals(12L, done.startedActiveTicks);
         assertEquals(345L, done.startedTickCostNs);
+        assertEquals(100L, done.startedNs);
+        assertEquals(200L, done.completedNs);
     }
 
     private static Map<String, Long> outputs(String key, long amount) {
