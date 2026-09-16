@@ -16,7 +16,9 @@ class XTProfilePendingOperationsTest {
         XTProfilePendingOperations pending = new XTProfilePendingOperations();
         pending.add(7L, "medium:a", 1_000L, outputs("item:x", 2L));
 
-        assertTrue(pending.accept(7L, "item:x", 1L, 4_000L).isEmpty());
+        assertTrue(
+            pending.accept(7L, "item:x", 1L, 4_000L)
+                .isEmpty());
         List<XTProfilePendingOperations.Completion> done = pending.accept(7L, "item:x", 1L, 6_000L);
 
         assertEquals(1, done.size());
@@ -32,8 +34,12 @@ class XTProfilePendingOperationsTest {
         expected.put("item:b", 3L);
         pending.add(2L, "medium:assline", 10L, expected);
 
-        assertTrue(pending.accept(2L, "item:a", 1L, 20L).isEmpty());
-        assertTrue(pending.accept(2L, "item:b", 2L, 30L).isEmpty());
+        assertTrue(
+            pending.accept(2L, "item:a", 1L, 20L)
+                .isEmpty());
+        assertTrue(
+            pending.accept(2L, "item:b", 2L, 30L)
+                .isEmpty());
         List<XTProfilePendingOperations.Completion> done = pending.accept(2L, "item:b", 1L, 40L);
 
         assertEquals(1, done.size());
@@ -47,8 +53,14 @@ class XTProfilePendingOperationsTest {
         pending.add(3L, "medium:first", 100L, outputs("item:x", 1L));
         pending.add(3L, "medium:second", 200L, outputs("item:x", 1L));
 
-        assertEquals("medium:first", pending.accept(3L, "item:x", 1L, 500L).get(0).mediumId);
-        assertEquals("medium:second", pending.accept(3L, "item:x", 1L, 700L).get(0).mediumId);
+        assertEquals(
+            "medium:first",
+            pending.accept(3L, "item:x", 1L, 500L)
+                .get(0).mediumId);
+        assertEquals(
+            "medium:second",
+            pending.accept(3L, "item:x", 1L, 700L)
+                .get(0).mediumId);
     }
 
     @Test
@@ -70,7 +82,9 @@ class XTProfilePendingOperationsTest {
         pending.add(4L, "medium:old", 100L, outputs("item:x", 1L));
         pending.clearCpu(4L);
 
-        assertTrue(pending.accept(4L, "item:x", 1L, 200L).isEmpty());
+        assertTrue(
+            pending.accept(4L, "item:x", 1L, 200L)
+                .isEmpty());
     }
 
     @Test
@@ -78,8 +92,13 @@ class XTProfilePendingOperationsTest {
         XTProfilePendingOperations pending = new XTProfilePendingOperations();
         pending.add(4L, "medium:a", 100L, outputs("item:x", 1L));
 
-        assertTrue(pending.accept(5L, "item:x", 1L, 200L).isEmpty());
-        assertEquals("medium:a", pending.accept(4L, "item:x", 1L, 300L).get(0).mediumId);
+        assertTrue(
+            pending.accept(5L, "item:x", 1L, 200L)
+                .isEmpty());
+        assertEquals(
+            "medium:a",
+            pending.accept(4L, "item:x", 1L, 300L)
+                .get(0).mediumId);
     }
 
     private static Map<String, Long> outputs(String key, long amount) {
