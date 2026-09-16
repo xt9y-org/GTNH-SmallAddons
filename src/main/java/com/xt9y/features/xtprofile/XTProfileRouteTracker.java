@@ -15,7 +15,9 @@ import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
+import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
+import gregtech.api.metatileentity.implementations.MTEMultiBlockBase;
 
 public final class XTProfileRouteTracker {
 
@@ -126,16 +128,20 @@ public final class XTProfileRouteTracker {
         IGregTechTileEntity gregTech = (IGregTechTileEntity) machine;
         boolean machineActive = gregTech.isActive();
         boolean sameMachine = previous == machine;
-        if (shouldResetTimingBoundary(sameMachine, previousCpuId, cpuId, machineActive)) target.lastSampleNs = now;
+        boolean resetBoundary = shouldResetTimingBoundary(sameMachine, previousCpuId, cpuId, machineActive);
+        if (resetBoundary) {
+            target.lastSampleNs = now;
+            target.lastRecipesDone = recipesDone(gregTech);
+        }
 
         target.tile = new WeakReference<>(machine);
         target.cpuId = cpuId;
         record.machine = XTProfileLabels.machineName(machine);
 
-        if (!sameMachine) {
-            gregTech.startTimeStatistics();
-            target.timing = XTProfileStats.summarize(gregTech.getTimeStatistics());
-        }
+        // GT can disable its own timing collection while an idle machine is sleeping. Re-enable it on every
+        // crafting dispatch so the next machine tick is always measurable, even when this is the same controller.
+        gregTech.startTimeStatistics();
+        if (!sameMachine || resetBoundary) target.timing = XTProfileStats.summarize(gregTech.getTimeStatistics());
     }
 
     static boolean shouldResetTimingBoundary(boolean sameMachine, long previousCpuId, long cpuId,
@@ -151,23 +157,53 @@ public final class XTProfileRouteTracker {
             if (medium == null || !(tile instanceof IGregTechTileEntity) || tile.isInvalid()) continue;
 
             IGregTechTileEntity machine = (IGregTechTileEntity) tile;
-            if (refreshTiming) target.timing = XTProfileStats.summarize(machine.getTimeStatistics());
+            long currentRecipesDone = recipesDone(machine);
+            boolean completedRecipe = completedRecipe(target.lastRecipesDone, currentRecipesDone);
+            if (currentRecipesDone != Long.MIN_VALUE) target.lastRecipesDone = currentRecipesDone;
+
+            if (refreshTiming || completedRecipe) target.timing = XTProfileStats.summarize(machine.getTimeStatistics());
 
             boolean machineActive = machine.isActive();
-            long busyDelta = XTProfileStats.busyDelta(target.lastSampleNs, now, machineActive);
-            target.lastSampleNs = now;
-            if (!machineActive || busyDelta <= 0) continue;
-
-            long tickCostNs = Math.max(0, target.timing.averageNs);
-            medium.busyNs += busyDelta;
-            medium.tickCostNs += tickCostNs;
-            medium.activeTicks++;
-            if (target.cpuId != 0) {
-                add(medium.busyNsByCpu, target.cpuId, busyDelta);
-                add(medium.tickCostNsByCpu, target.cpuId, tickCostNs);
-                add(medium.activeTicksByCpu, target.cpuId, 1);
+            if (machineActive || completedRecipe) {
+                target.lastSampleNs = accountRunningTick(
+                    medium,
+                    target.cpuId,
+                    target.lastSampleNs,
+                    now,
+                    Math.max(0, target.timing.averageNs));
+            } else {
+                target.lastSampleNs = now;
             }
         }
+    }
+
+    static boolean completedRecipe(long previousRecipesDone, long currentRecipesDone) {
+        return previousRecipesDone != Long.MIN_VALUE && currentRecipesDone != Long.MIN_VALUE
+            && currentRecipesDone > previousRecipesDone;
+    }
+
+    static long accountRunningTick(XTProfileData.MediumRecord medium, long cpuId, long previousNs, long nowNs,
+        long tickCostNs) {
+        long busyDelta = XTProfileStats.busyDelta(previousNs, nowNs, true);
+        if (busyDelta > 0) {
+            medium.busyNs += busyDelta;
+            if (cpuId != 0) add(medium.busyNsByCpu, cpuId, busyDelta);
+        }
+
+        long safeTickCostNs = Math.max(0, tickCostNs);
+        medium.tickCostNs += safeTickCostNs;
+        medium.activeTicks++;
+        if (cpuId != 0) {
+            add(medium.tickCostNsByCpu, cpuId, safeTickCostNs);
+            add(medium.activeTicksByCpu, cpuId, 1);
+        }
+        return nowNs;
+    }
+
+    private static long recipesDone(IGregTechTileEntity machine) {
+        IMetaTileEntity metaTile = machine.getMetaTileEntity();
+        if (metaTile instanceof MTEMultiBlockBase) return ((MTEMultiBlockBase) metaTile).recipesDone;
+        return Long.MIN_VALUE;
     }
 
     private static TileEntity resolveMachine(TileEntity target) {
@@ -284,6 +320,7 @@ public final class XTProfileRouteTracker {
         WeakReference<TileEntity> tile;
         long cpuId;
         long lastSampleNs;
+        long lastRecipesDone = Long.MIN_VALUE;
         XTProfileStats.Timing timing = XTProfileStats.summarize(null);
     }
 }
