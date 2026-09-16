@@ -3,7 +3,6 @@ package com.xt9y.features.xtprofile;
 import net.minecraft.tileentity.TileEntity;
 
 import appeng.api.networking.crafting.ICraftingMedium;
-import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.me.cluster.implementations.CraftingCPUCluster;
 
 public final class XTProfileDispatchContext {
@@ -14,13 +13,12 @@ public final class XTProfileDispatchContext {
         CURRENT.set(new Context(cpu, medium));
     }
 
-    public static void recordTarget(TileEntity target, ICraftingPatternDetails pattern) {
+    public static void recordTarget(TileEntity target) {
         Context context = CURRENT.get();
         if (context == null) return;
 
         context.recordedTarget = true;
         context.target = target;
-        XTProfileManager.INSTANCE.recordTarget(context.cpu, context.medium, target, pattern);
     }
 
     public static boolean hasRecordedTarget() {
