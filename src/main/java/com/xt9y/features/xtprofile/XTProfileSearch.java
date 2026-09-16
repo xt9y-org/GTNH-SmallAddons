@@ -11,7 +11,9 @@ final class XTProfileSearch {
     }
 
     private static String normalize(String value) {
-        return value == null ? "" : value.toLowerCase(Locale.ROOT).trim();
+        return value == null ? ""
+            : value.toLowerCase(Locale.ROOT)
+                .trim();
     }
 
     private XTProfileSearch() {}
