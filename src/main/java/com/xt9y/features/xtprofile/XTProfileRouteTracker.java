@@ -26,7 +26,6 @@ public final class XTProfileRouteTracker {
     public static final XTProfileRouteTracker INSTANCE = new XTProfileRouteTracker();
 
     private static final int PANEL_REFRESH_TICKS = 10;
-    private static final long GT_TICK_NS = 50_000_000L;
 
     private final WeakHashMap<CraftingCPUCluster, Long> cpuIds = new WeakHashMap<>();
     private final WeakHashMap<CraftingCPUCluster, String> cpuCraftIds = new WeakHashMap<>();
@@ -34,8 +33,10 @@ public final class XTProfileRouteTracker {
     private final Map<String, MachineClock> machineClocks = new LinkedHashMap<>();
     private final XTProfilePendingOperations pendingOperations = new XTProfilePendingOperations();
     private final XTProfileCompletionQueue completionQueue = new XTProfileCompletionQueue();
-    private final XTProfileIntervalUnion sessionCoverage = new XTProfileIntervalUnion();
-    private final XTProfileIntervalUnion cpuCoverage = new XTProfileIntervalUnion();
+    private final XTProfileIntervalUnion latencySessionCoverage = new XTProfileIntervalUnion();
+    private final XTProfileIntervalUnion latencyCpuCoverage = new XTProfileIntervalUnion();
+    private final XTProfileIntervalUnion machineSessionCoverage = new XTProfileIntervalUnion();
+    private final XTProfileIntervalUnion machineCpuCoverage = new XTProfileIntervalUnion();
 
     private boolean active;
     private long nextCpuId = 1;
@@ -90,11 +91,17 @@ public final class XTProfileRouteTracker {
             updateLocation(record, medium);
 
             MachineClock clock = bindMachine(record, medium, exactTarget);
-            if (clock != null && pattern != null && !pattern.isCraftable()) {
+            if (pattern != null && !pattern.isCraftable()) {
                 Map<String, Long> expected = expectedOutputs(pattern);
                 if (!expected.isEmpty()) {
-                    pendingOperations
-                        .add(cpuId, mediumId, clock.id, now, clock.activeTicks, clock.tickCostNs, expected);
+                    pendingOperations.add(
+                        cpuId,
+                        mediumId,
+                        clock == null ? null : clock.id,
+                        now,
+                        clock == null ? 0 : clock.activeTicks,
+                        clock == null ? 0 : clock.tickCostNs,
+                        expected);
                 }
             }
         }
@@ -153,8 +160,20 @@ public final class XTProfileRouteTracker {
         for (XTProfileCompletionQueue.Entry entry : completionQueue.drain()) {
             XTProfilePendingOperations.Completion completion = entry.completion;
             XTProfileData.MediumRecord medium = media.get(completion.mediumId);
+            if (medium == null) continue;
+
+            accountCompletedLatency(
+                medium,
+                entry.cpuId,
+                completion.mediumId,
+                completion.startedNs,
+                completion.completedNs,
+                latencySessionCoverage,
+                latencyCpuCoverage);
+
+            if (completion.machineId == null) continue;
             MachineClock clock = machineClocks.get(completion.machineId);
-            if (medium == null || clock == null) continue;
+            if (clock == null) continue;
 
             long endTicks = clock.activeTicks;
             long tickCostNs = Math.max(0, clock.tickCostNs - completion.startedTickCostNs);
@@ -166,8 +185,8 @@ public final class XTProfileRouteTracker {
                 completion.startedActiveTicks,
                 endTicks,
                 tickCostNs,
-                sessionCoverage,
-                cpuCoverage);
+                machineSessionCoverage,
+                machineCpuCoverage);
         }
     }
 
@@ -258,6 +277,19 @@ public final class XTProfileRouteTracker {
         expected.put(key, (previous == null ? 0L : previous) + amount);
     }
 
+    static void accountCompletedLatency(XTProfileData.MediumRecord medium, long cpuId, String mediumId, long startNs,
+        long endNs, XTProfileIntervalUnion allCoverage, XTProfileIntervalUnion perCpuCoverage) {
+        if (medium == null || mediumId == null || endNs <= startNs) return;
+
+        long addedNs = allCoverage.add(mediumId, startNs, endNs);
+        if (addedNs > 0) medium.busyNs += addedNs;
+
+        if (cpuId == 0) return;
+        String cpuRouteKey = cpuId + "\n" + mediumId;
+        long addedCpuNs = perCpuCoverage.add(cpuRouteKey, startNs, endNs);
+        if (addedCpuNs > 0) add(medium.busyNsByCpu, cpuId, addedCpuNs);
+    }
+
     static void accountCompletedMachineTicks(XTProfileData.MediumRecord medium, long cpuId, String mediumId,
         String machineId, long startTick, long endTick, long operationTickCostNs, XTProfileIntervalUnion allCoverage,
         XTProfileIntervalUnion perCpuCoverage) {
@@ -267,7 +299,6 @@ public final class XTProfileRouteTracker {
         String routeKey = mediumId + "\n" + machineId;
         long addedTicks = allCoverage.add(routeKey, startTick, endTick);
         if (addedTicks > 0) {
-            medium.busyNs += addedTicks * GT_TICK_NS;
             medium.activeTicks += addedTicks;
             medium.tickCostNs += proportionalCost(operationTickCostNs, addedTicks, spanTicks);
         }
@@ -276,7 +307,6 @@ public final class XTProfileRouteTracker {
         String cpuRouteKey = cpuId + "\n" + routeKey;
         long addedCpuTicks = perCpuCoverage.add(cpuRouteKey, startTick, endTick);
         if (addedCpuTicks > 0) {
-            add(medium.busyNsByCpu, cpuId, addedCpuTicks * GT_TICK_NS);
             add(medium.activeTicksByCpu, cpuId, addedCpuTicks);
             add(medium.tickCostNsByCpu, cpuId, proportionalCost(operationTickCostNs, addedCpuTicks, spanTicks));
         }
@@ -411,8 +441,10 @@ public final class XTProfileRouteTracker {
         machineClocks.clear();
         pendingOperations.clear();
         completionQueue.clear();
-        sessionCoverage.clear();
-        cpuCoverage.clear();
+        latencySessionCoverage.clear();
+        latencyCpuCoverage.clear();
+        machineSessionCoverage.clear();
+        machineCpuCoverage.clear();
         XTProfileMachineResolver.clear();
         nextCpuId = 1;
         ticks = 0;
