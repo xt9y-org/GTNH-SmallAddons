@@ -33,6 +33,7 @@ public final class XTProfileRouteTracker {
     private final Map<String, XTProfileData.MediumRecord> media = new LinkedHashMap<>();
     private final Map<String, MachineClock> machineClocks = new LinkedHashMap<>();
     private final XTProfilePendingOperations pendingOperations = new XTProfilePendingOperations();
+    private final XTProfileCompletionQueue completionQueue = new XTProfileCompletionQueue();
     private final XTProfileIntervalUnion sessionCoverage = new XTProfileIntervalUnion();
     private final XTProfileIntervalUnion cpuCoverage = new XTProfileIntervalUnion();
 
@@ -113,25 +114,7 @@ public final class XTProfileRouteTracker {
             long now = System.nanoTime();
             List<XTProfilePendingOperations.Completion> completed = pendingOperations
                 .accept(cpuId, outputKey, returnedStack.getStackSize(), now);
-            for (XTProfilePendingOperations.Completion completion : completed) {
-                XTProfileData.MediumRecord medium = media.get(completion.mediumId);
-                MachineClock clock = machineClocks.get(completion.machineId);
-                if (medium == null || clock == null) continue;
-
-                advanceMachineClock(clock, false);
-                long endTicks = clock.activeTicks;
-                long tickCostNs = Math.max(0, clock.tickCostNs - completion.startedTickCostNs);
-                accountCompletedMachineTicks(
-                    medium,
-                    cpuId,
-                    completion.mediumId,
-                    completion.machineId,
-                    completion.startedActiveTicks,
-                    endTicks,
-                    tickCostNs,
-                    sessionCoverage,
-                    cpuCoverage);
-            }
+            completionQueue.defer(cpuId, completed);
         }
     }
 
@@ -160,9 +143,32 @@ public final class XTProfileRouteTracker {
         synchronized (this) {
             if (!active) return;
             for (MachineClock clock : machineClocks.values()) advanceMachineClock(clock, true);
+            finalizeCompletedOperations();
             sync = ticks % PANEL_REFRESH_TICKS == 0;
         }
         if (sync) XTProfilePanelSync.syncOpenCraftingCpuScreens(this);
+    }
+
+    private void finalizeCompletedOperations() {
+        for (XTProfileCompletionQueue.Entry entry : completionQueue.drain()) {
+            XTProfilePendingOperations.Completion completion = entry.completion;
+            XTProfileData.MediumRecord medium = media.get(completion.mediumId);
+            MachineClock clock = machineClocks.get(completion.machineId);
+            if (medium == null || clock == null) continue;
+
+            long endTicks = clock.activeTicks;
+            long tickCostNs = Math.max(0, clock.tickCostNs - completion.startedTickCostNs);
+            accountCompletedMachineTicks(
+                medium,
+                entry.cpuId,
+                completion.mediumId,
+                completion.machineId,
+                completion.startedActiveTicks,
+                endTicks,
+                tickCostNs,
+                sessionCoverage,
+                cpuCoverage);
+        }
     }
 
     private MachineClock bindMachine(XTProfileData.MediumRecord record, ICraftingMedium medium,
@@ -355,6 +361,7 @@ public final class XTProfileRouteTracker {
         if (isNewCraft(previousCraftId, currentCraftId, cpu.isBusy())) {
             resetCpuMetrics(media.values(), existing);
             pendingOperations.clearCpu(existing);
+            completionQueue.clearCpu(existing);
         }
         cpuCraftIds.put(cpu, currentCraftId);
         return existing;
@@ -403,6 +410,7 @@ public final class XTProfileRouteTracker {
         media.clear();
         machineClocks.clear();
         pendingOperations.clear();
+        completionQueue.clear();
         sessionCoverage.clear();
         cpuCoverage.clear();
         XTProfileMachineResolver.clear();
