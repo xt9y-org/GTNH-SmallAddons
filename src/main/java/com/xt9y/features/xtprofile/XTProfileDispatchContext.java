@@ -28,7 +28,7 @@ public final class XTProfileDispatchContext {
         return context != null && context.recordedTarget;
     }
 
-    static TileEntity target() {
+    public static TileEntity target() {
         Context context = CURRENT.get();
         return context == null ? null : context.target;
     }
