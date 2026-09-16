@@ -13,25 +13,9 @@ class XTProfileRouteTimeAccountingTest {
         XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
         XTProfileRouteTracker.accountCompletedMachineTicks(
-            medium,
-            1L,
-            "medium:assline",
-            "machine:assline",
-            10L,
-            50L,
-            8_000L,
-            all,
-            cpu);
+            medium, 1L, "medium:assline", "machine:assline", 10L, 50L, 8_000L, all, cpu);
         XTProfileRouteTracker.accountCompletedMachineTicks(
-            medium,
-            1L,
-            "medium:assline",
-            "machine:assline",
-            20L,
-            50L,
-            6_000L,
-            all,
-            cpu);
+            medium, 1L, "medium:assline", "machine:assline", 20L, 50L, 6_000L, all, cpu);
 
         assertEquals(2_000_000_000L, medium.busyNs);
         assertEquals(2_000_000_000L, medium.busyNsByCpu.get(1L));
@@ -48,25 +32,9 @@ class XTProfileRouteTimeAccountingTest {
         XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
         XTProfileRouteTracker.accountCompletedMachineTicks(
-            medium,
-            1L,
-            "medium:assline",
-            "machine:assline",
-            10L,
-            50L,
-            8_000L,
-            all,
-            cpu);
+            medium, 1L, "medium:assline", "machine:assline", 10L, 50L, 8_000L, all, cpu);
         XTProfileRouteTracker.accountCompletedMachineTicks(
-            medium,
-            1L,
-            "medium:assline",
-            "machine:assline",
-            40L,
-            60L,
-            4_000L,
-            all,
-            cpu);
+            medium, 1L, "medium:assline", "machine:assline", 40L, 60L, 4_000L, all, cpu);
 
         assertEquals(2_500_000_000L, medium.busyNs);
         assertEquals(50L, medium.activeTicks);
@@ -83,15 +51,7 @@ class XTProfileRouteTimeAccountingTest {
         XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
         XTProfileRouteTracker.accountCompletedMachineTicks(
-            medium,
-            7L,
-            "medium:queued",
-            "machine:mixer",
-            100L,
-            100L,
-            999_999_999L,
-            all,
-            cpu);
+            medium, 7L, "medium:queued", "machine:mixer", 100L, 100L, 999_999_999L, all, cpu);
 
         assertEquals(0L, medium.busyNs);
         assertEquals(0L, medium.busyNsByCpu.getOrDefault(7L, 0L));
