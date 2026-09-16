@@ -30,7 +30,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
     private boolean xtprofile$dispatch(ICraftingMedium medium, ICraftingPatternDetails pattern,
         InventoryCrafting inventory, Operation<Boolean> original) {
         CraftingCPUCluster cpu = (CraftingCPUCluster) (Object) this;
-        XTProfileDispatchContext.begin(cpu, medium);
+        XTProfileDispatchContext.begin();
         try {
             boolean pushed = original.call(medium, pattern, inventory);
             if (pushed) {

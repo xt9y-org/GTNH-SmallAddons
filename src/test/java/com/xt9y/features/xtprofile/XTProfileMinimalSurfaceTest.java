@@ -11,7 +11,7 @@ class XTProfileMinimalSurfaceTest {
     @Test
     void dispatchContextOnlyNeedsTheResolvedTarget() {
         TileEntity target = new TileEntity();
-        XTProfileDispatchContext.begin(null, null);
+        XTProfileDispatchContext.begin();
         try {
             XTProfileDispatchContext.recordTarget(target);
             assertSame(target, XTProfileDispatchContext.target());

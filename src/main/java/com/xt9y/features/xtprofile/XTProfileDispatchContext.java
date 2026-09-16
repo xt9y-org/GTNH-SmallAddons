@@ -2,28 +2,17 @@ package com.xt9y.features.xtprofile;
 
 import net.minecraft.tileentity.TileEntity;
 
-import appeng.api.networking.crafting.ICraftingMedium;
-import appeng.me.cluster.implementations.CraftingCPUCluster;
-
 public final class XTProfileDispatchContext {
 
     private static final ThreadLocal<Context> CURRENT = new ThreadLocal<>();
 
-    public static void begin(CraftingCPUCluster cpu, ICraftingMedium medium) {
-        CURRENT.set(new Context(cpu, medium));
+    public static void begin() {
+        CURRENT.set(new Context());
     }
 
     public static void recordTarget(TileEntity target) {
         Context context = CURRENT.get();
-        if (context == null) return;
-
-        context.recordedTarget = true;
-        context.target = target;
-    }
-
-    public static boolean hasRecordedTarget() {
-        Context context = CURRENT.get();
-        return context != null && context.recordedTarget;
+        if (context != null) context.target = target;
     }
 
     public static TileEntity target() {
@@ -39,14 +28,6 @@ public final class XTProfileDispatchContext {
 
     private static final class Context {
 
-        final CraftingCPUCluster cpu;
-        final ICraftingMedium medium;
-        boolean recordedTarget;
         TileEntity target;
-
-        Context(CraftingCPUCluster cpu, ICraftingMedium medium) {
-            this.cpu = cpu;
-            this.medium = medium;
-        }
     }
 }

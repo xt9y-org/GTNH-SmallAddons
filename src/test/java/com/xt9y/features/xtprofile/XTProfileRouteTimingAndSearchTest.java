@@ -19,7 +19,7 @@ class XTProfileRouteTimingAndSearchTest {
     @Test
     void dispatchContextKeepsExactInterfaceTargetUntilDispatchCompletes() throws Exception {
         TileEntity target = new TileEntity();
-        XTProfileDispatchContext.begin(null, null);
+        XTProfileDispatchContext.begin();
         try {
             XTProfileDispatchContext.recordTarget(target);
             Method method = XTProfileDispatchContext.class.getDeclaredMethod("target");
