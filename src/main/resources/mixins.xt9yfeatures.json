@@ -14,13 +14,15 @@
     "MixinMTETieredMachineBlockBaseGui",
     "MixinDualityInterface",
     "MixinTileInterface",
-    "MixinCraftingCPUClusterXTProfile"
+    "MixinCraftingCPUClusterXTProfile",
+    "MixinDualityInterfaceXTProfile"
   ],
   "client": [
     "MixinGregTech5RecipeProcessorNonConsumable",
     "MixinNEEPatternTerminalNonConsumable",
     "MixinVirtualMEPhantomSlotNonConsumable",
-    "MixinVirtualMESlotNonConsumable"
+    "MixinVirtualMESlotNonConsumable",
+    "MixinGuiCraftingCPUXTProfile"
   ],
   "server": []
 }
