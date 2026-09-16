@@ -32,6 +32,8 @@ public final class XTProfileRouteTracker {
     private final Map<String, XTProfileData.MediumRecord> media = new LinkedHashMap<>();
     private final Map<String, TimingTarget> timingTargets = new LinkedHashMap<>();
     private final XTProfilePendingOperations pendingOperations = new XTProfilePendingOperations();
+    private final XTProfileIntervalUnion completedIntervals = new XTProfileIntervalUnion();
+    private final Map<Long, XTProfileIntervalUnion> completedIntervalsByCpu = new LinkedHashMap<>();
 
     private boolean active;
     private long nextCpuId = 1;
@@ -114,10 +116,25 @@ public final class XTProfileRouteTracker {
             String outputKey = XTProfileLabels.stackKey(returnedStack);
             if (outputKey == null || outputKey.isEmpty()) return;
 
+            XTProfileIntervalUnion cpuIntervals = completedIntervalsByCpu.get(cpuId);
+            if (cpuIntervals == null) {
+                cpuIntervals = new XTProfileIntervalUnion();
+                completedIntervalsByCpu.put(cpuId, cpuIntervals);
+            }
+
             for (XTProfilePendingOperations.Completion completion : pendingOperations
                 .accept(cpuId, outputKey, returnedStack.getStackSize(), now)) {
                 XTProfileData.MediumRecord medium = media.get(completion.mediumId);
-                if (medium != null) accountCompletedLatency(medium, cpuId, completion.elapsedNs);
+                if (medium != null) {
+                    accountCompletedInterval(
+                        medium,
+                        cpuId,
+                        completion.mediumId,
+                        now - completion.elapsedNs,
+                        now,
+                        completedIntervals,
+                        cpuIntervals);
+                }
             }
         }
     }
@@ -248,6 +265,14 @@ public final class XTProfileRouteTracker {
         if (cpuId != 0) add(medium.busyNsByCpu, cpuId, safeElapsedNs);
     }
 
+    static void accountCompletedInterval(XTProfileData.MediumRecord medium, long cpuId, String mediumId,
+        long startedNs, long returnedNs, XTProfileIntervalUnion allIntervals, XTProfileIntervalUnion cpuIntervals) {
+        medium.busyNs += allIntervals.add(mediumId, startedNs, returnedNs);
+        if (cpuId != 0 && cpuIntervals != null) {
+            add(medium.busyNsByCpu, cpuId, cpuIntervals.add(mediumId, startedNs, returnedNs));
+        }
+    }
+
     static void addExpectedOutput(Map<String, Long> expected, String key, long amount) {
         if (expected == null || key == null || key.isEmpty() || amount <= 0) return;
         Long previous = expected.get(key);
@@ -303,6 +328,7 @@ public final class XTProfileRouteTracker {
         String previousCraftId = cpuCraftIds.get(cpu);
         if (isNewCraft(previousCraftId, currentCraftId, cpu.isBusy())) {
             pendingOperations.clearCpu(existing);
+            completedIntervalsByCpu.remove(existing);
             resetCpuMetrics(media.values(), existing);
             resetTimingBoundary(existing, now);
         }
@@ -359,6 +385,8 @@ public final class XTProfileRouteTracker {
         media.clear();
         timingTargets.clear();
         pendingOperations.clear();
+        completedIntervals.clear();
+        completedIntervalsByCpu.clear();
         XTProfileMachineResolver.clear();
         nextCpuId = 1;
         ticks = 0;
