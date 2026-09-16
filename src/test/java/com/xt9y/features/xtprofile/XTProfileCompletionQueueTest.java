@@ -13,8 +13,12 @@ class XTProfileCompletionQueueTest {
     @Test
     void returnedOutputWaitsUntilEndOfTickDrain() {
         XTProfileCompletionQueue queue = new XTProfileCompletionQueue();
-        XTProfilePendingOperations.Completion completion =
-            new XTProfilePendingOperations.Completion("medium:assline", "machine:assline", 4L, 100L, 1_000L);
+        XTProfilePendingOperations.Completion completion = new XTProfilePendingOperations.Completion(
+            "medium:assline",
+            "machine:assline",
+            4L,
+            100L,
+            1_000L);
 
         queue.defer(7L, Collections.singletonList(completion));
 
@@ -22,7 +26,9 @@ class XTProfileCompletionQueueTest {
         assertEquals(1, drained.size());
         assertEquals(7L, drained.get(0).cpuId);
         assertEquals(completion, drained.get(0).completion);
-        assertTrue(queue.drain().isEmpty());
+        assertTrue(
+            queue.drain()
+                .isEmpty());
     }
 
     @Test
@@ -30,11 +36,13 @@ class XTProfileCompletionQueueTest {
         XTProfileCompletionQueue queue = new XTProfileCompletionQueue();
         queue.defer(
             3L,
-            Collections.singletonList(
-                new XTProfilePendingOperations.Completion("medium:old", "machine:assline", 1L, 0L, 1L)));
+            Collections
+                .singletonList(new XTProfilePendingOperations.Completion("medium:old", "machine:assline", 1L, 0L, 1L)));
 
         queue.clearCpu(3L);
 
-        assertTrue(queue.drain().isEmpty());
+        assertTrue(
+            queue.drain()
+                .isEmpty());
     }
 }
