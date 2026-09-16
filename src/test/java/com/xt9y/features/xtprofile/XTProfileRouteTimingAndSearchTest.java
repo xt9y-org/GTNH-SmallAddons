@@ -42,6 +42,22 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
+    void multiblockProgressCountsAsRunningWhenControllerActiveFlagIsFalse() throws Exception {
+        Method method;
+        try {
+            method = XTProfileRouteTracker.class.getDeclaredMethod("machineRunning", boolean.class, int.class);
+        } catch (NoSuchMethodException missing) {
+            fail("missing multiblock-progress running-state fallback");
+            return;
+        }
+        method.setAccessible(true);
+
+        assertTrue((Boolean) method.invoke(null, false, 200));
+        assertTrue((Boolean) method.invoke(null, true, 0));
+        assertFalse((Boolean) method.invoke(null, false, 0));
+    }
+
+    @Test
     void runningTickAccountsOneTickMachineBeforeEndOfTickInactiveState() throws Exception {
         Method method;
         try {
