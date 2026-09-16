@@ -27,6 +27,9 @@ final class XTProfileMachineResolver {
         IMetaTileEntity meta = ((IGregTechTileEntity) target).getMetaTileEntity();
         if (meta instanceof MTEMultiBlockBase) return target;
 
+        TileEntity directController = watcherController(meta);
+        if (directController != null) return directController;
+
         World world = target.getWorldObj();
         WorldCache cache;
         synchronized (CACHES) {
@@ -55,6 +58,45 @@ final class XTProfileMachineResolver {
         synchronized (CACHES) {
             CACHES.clear();
         }
+    }
+
+    static <T> T firstInstance(Iterable<?> values, Class<T> type) {
+        if (values == null || type == null) return null;
+        for (Object value : values) {
+            if (type.isInstance(value)) return type.cast(value);
+        }
+        return null;
+    }
+
+    private static TileEntity watcherController(IMetaTileEntity meta) {
+        if (meta == null) return null;
+
+        Class<?> type = meta.getClass();
+        while (type != null && IMetaTileEntity.class.isAssignableFrom(type)) {
+            try {
+                Field field = type.getDeclaredField("watchers");
+                if (Iterable.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    Object value = field.get(meta);
+                    if (value instanceof Iterable) {
+                        MTEMultiBlockBase controller = firstInstance((Iterable<?>) value, MTEMultiBlockBase.class);
+                        TileEntity controllerTile = controllerTile(controller);
+                        if (controllerTile != null) return controllerTile;
+                    }
+                }
+            } catch (NoSuchFieldException ignored) {
+            } catch (ReflectiveOperationException | SecurityException | IllegalArgumentException ignored) {}
+            type = type.getSuperclass();
+        }
+        return null;
+    }
+
+    private static TileEntity controllerTile(MTEMultiBlockBase controller) {
+        if (controller == null) return null;
+        IGregTechTileEntity base = controller.getBaseMetaTileEntity();
+        if (!(base instanceof TileEntity)) return null;
+        TileEntity tile = (TileEntity) base;
+        return tile.isInvalid() ? null : tile;
     }
 
     private static void rebuild(World world, WorldCache cache, long tick) {
