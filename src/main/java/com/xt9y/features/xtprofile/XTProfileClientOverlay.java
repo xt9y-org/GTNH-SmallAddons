@@ -97,7 +97,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
     public static boolean handleSearchKey(char character, int key) {
         XTProfileClientOverlay overlay = instance;
-        if (overlay == null || overlay.searchField == null || !overlay.searchField.isFocused()
+        if (overlay == null || overlay.searchField == null
+            || !overlay.searchField.isFocused()
             || !(Minecraft.getMinecraft().currentScreen instanceof GuiCraftingCPU)) return false;
 
         String oldText = overlay.searchField.getText();
@@ -256,10 +257,24 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             searchField.setUnfocusWithEnter(true);
         }
         if (cpuButton == null) {
-            cpuButton = new GuiAeButton(CPU_BUTTON_ID, 0, 0, CPU_BUTTON_WIDTH, HEADER_BUTTON_HEIGHT, "CPU", "Current CPU");
+            cpuButton = new GuiAeButton(
+                CPU_BUTTON_ID,
+                0,
+                0,
+                CPU_BUTTON_WIDTH,
+                HEADER_BUTTON_HEIGHT,
+                "CPU",
+                "Current CPU");
         }
         if (allButton == null) {
-            allButton = new GuiAeButton(ALL_BUTTON_ID, 0, 0, ALL_BUTTON_WIDTH, HEADER_BUTTON_HEIGHT, "All", "All profiled crafts");
+            allButton = new GuiAeButton(
+                ALL_BUTTON_ID,
+                0,
+                0,
+                ALL_BUTTON_WIDTH,
+                HEADER_BUTTON_HEIGHT,
+                "All",
+                "All profiled crafts");
         }
     }
 
@@ -364,7 +379,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private void drawSearch(AEBaseGui gui) {
         drawSlot(gui, panelTop + SEARCH_TOP, false, false);
         searchField.drawTextBox();
-        if (searchField.getText().isEmpty() && !searchField.isFocused()) {
+        if (searchField.getText()
+            .isEmpty() && !searchField.isFocused()) {
             drawScaledString(
                 Minecraft.getMinecraft(),
                 "Search Interface / CRIB / machine...",
@@ -389,7 +405,13 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             drawSlot(gui, y, hovered, selected);
 
             String name = fit(entry.name, 170, mc);
-            drawScaledString(mc, name, panelLeft + SLOT_LEFT + 3, y + 3, 0.8F, GuiColors.CraftingStatusCPUName.getColor());
+            drawScaledString(
+                mc,
+                name,
+                panelLeft + SLOT_LEFT + 3,
+                y + 3,
+                0.8F,
+                GuiColors.CraftingStatusCPUName.getColor());
 
             String machine = entry.machine == null || entry.machine.isEmpty() ? "" : fit(entry.machine, 115, mc);
             drawScaledString(
@@ -417,8 +439,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
         if (entries.isEmpty()) {
             String search = searchField == null ? "" : searchField.getText();
-            String empty = search.isEmpty()
-                ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
+            String empty = search.isEmpty() ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
                 : "No matching routes";
             drawCentered(empty, panelTop + DATA_TOP + 5, GuiColors.CraftingStatusCPUName.getColor());
         }
@@ -433,17 +454,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             ScreenColor.setGuiColor();
         }
         gui.bindTexture("guis/cpu_selector.png");
-        drawThreeSlice(
-            panelLeft + SLOT_LEFT,
-            y,
-            SLOT_WIDTH,
-            SLOT_HEIGHT,
-            100,
-            0,
-            67,
-            SLOT_HEIGHT,
-            3,
-            3);
+        drawThreeSlice(panelLeft + SLOT_LEFT, y, SLOT_WIDTH, SLOT_HEIGHT, 100, 0, 67, SLOT_HEIGHT, 3, 3);
         GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
