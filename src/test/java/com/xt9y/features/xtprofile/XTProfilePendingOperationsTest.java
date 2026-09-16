@@ -101,6 +101,19 @@ class XTProfilePendingOperationsTest {
                 .get(0).mediumId);
     }
 
+    @Test
+    void completionCarriesMachineClockSnapshot() {
+        XTProfilePendingOperations pending = new XTProfilePendingOperations();
+        pending.add(9L, "medium:a", "machine:a", 100L, 12L, 345L, outputs("item:x", 1L));
+
+        XTProfilePendingOperations.Completion done = pending.accept(9L, "item:x", 1L, 200L)
+            .get(0);
+
+        assertEquals("machine:a", done.machineId);
+        assertEquals(12L, done.startedActiveTicks);
+        assertEquals(345L, done.startedTickCostNs);
+    }
+
     private static Map<String, Long> outputs(String key, long amount) {
         Map<String, Long> result = new LinkedHashMap<>();
         result.put(key, amount);
