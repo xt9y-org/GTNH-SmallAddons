@@ -98,8 +98,9 @@ final class XTProfileLabels {
 
     static String mediumName(ICraftingMedium medium) {
         if (medium == null) return "unknown crafting medium";
-        if (medium instanceof IInterfaceViewable) {
-            String name = safeName(((IInterfaceViewable) medium).getName());
+        IInterfaceViewable viewable = interfaceViewable(medium);
+        if (viewable != null) {
+            String name = safeName(viewable.getName());
             if (name != null) return name;
         }
         if (medium instanceof ICustomNameObject) {
@@ -136,8 +137,9 @@ final class XTProfileLabels {
     static TileEntity mediumTile(ICraftingMedium medium) {
         if (medium == null) return null;
         try {
-            if (medium instanceof IInterfaceViewable) {
-                TileEntity tile = ((IInterfaceViewable) medium).getTileEntity();
+            IInterfaceViewable viewable = interfaceViewable(medium);
+            if (viewable != null) {
+                TileEntity tile = viewable.getTileEntity();
                 if (tile != null) return tile;
             }
             if (medium instanceof IMetaTileEntity) {
@@ -194,6 +196,21 @@ final class XTProfileLabels {
             + tile.yCoord
             + ", "
             + tile.zCoord;
+    }
+
+    private static IInterfaceViewable interfaceViewable(ICraftingMedium medium) {
+        if (medium instanceof IInterfaceViewable) return (IInterfaceViewable) medium;
+        if (medium == null) return null;
+        try {
+            Method method = medium.getClass()
+                .getMethod("getHost");
+            if (method.getParameterTypes().length != 0) return null;
+            method.setAccessible(true);
+            Object host = method.invoke(medium);
+            return host instanceof IInterfaceViewable ? (IInterfaceViewable) host : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
     }
 
     private static String stackName(IAEStack<?> stack) {
