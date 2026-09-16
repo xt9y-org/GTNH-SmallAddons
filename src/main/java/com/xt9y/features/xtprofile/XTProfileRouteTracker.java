@@ -52,6 +52,11 @@ public final class XTProfileRouteTracker {
     }
 
     public void recordDispatch(CraftingCPUCluster cpu, ICraftingMedium medium, ICraftingPatternDetails pattern) {
+        recordDispatch(cpu, medium, pattern, null);
+    }
+
+    public void recordDispatch(CraftingCPUCluster cpu, ICraftingMedium medium, ICraftingPatternDetails pattern,
+        TileEntity exactTarget) {
         if (cpu == null || medium == null) return;
 
         synchronized (this) {
@@ -75,7 +80,7 @@ public final class XTProfileRouteTracker {
             record.lastDispatchNs = now;
             add(record.dispatchesByCpu, cpuId, 1);
             updateLocation(record, medium);
-            bindTimingTarget(record, medium, cpuId, now);
+            bindTimingTarget(record, medium, exactTarget, cpuId, now);
         }
     }
 
@@ -103,27 +108,39 @@ public final class XTProfileRouteTracker {
         if (sync) XTProfilePanelSync.syncOpenCraftingCpuScreens(this);
     }
 
-    private void bindTimingTarget(XTProfileData.MediumRecord record, ICraftingMedium medium, long cpuId, long now) {
-        TileEntity machine = findMachine(medium);
+    private void bindTimingTarget(XTProfileData.MediumRecord record, ICraftingMedium medium, TileEntity exactTarget,
+        long cpuId, long now) {
+        TileEntity machine = resolveMachine(exactTarget);
+        if (!(machine instanceof IGregTechTileEntity) || machine.isInvalid()) machine = findMachine(medium);
         if (!(machine instanceof IGregTechTileEntity) || machine.isInvalid()) return;
 
         String mediumId = record.id;
         TimingTarget target = timingTargets.get(mediumId);
         TileEntity previous = target == null || target.tile == null ? null : target.tile.get();
+        long previousCpuId = target == null ? 0 : target.cpuId;
         if (target == null) {
             target = new TimingTarget();
             timingTargets.put(mediumId, target);
         }
 
+        IGregTechTileEntity gregTech = (IGregTechTileEntity) machine;
+        boolean machineActive = gregTech.isActive();
+        boolean sameMachine = previous == machine;
+        if (shouldResetTimingBoundary(sameMachine, previousCpuId, cpuId, machineActive)) target.lastSampleNs = now;
+
         target.tile = new WeakReference<>(machine);
         target.cpuId = cpuId;
-        target.lastSampleNs = now;
         record.machine = XTProfileLabels.machineName(machine);
 
-        if (previous != machine) {
-            ((IGregTechTileEntity) machine).startTimeStatistics();
-            target.timing = XTProfileStats.summarize(((IGregTechTileEntity) machine).getTimeStatistics());
+        if (!sameMachine) {
+            gregTech.startTimeStatistics();
+            target.timing = XTProfileStats.summarize(gregTech.getTimeStatistics());
         }
+    }
+
+    static boolean shouldResetTimingBoundary(boolean sameMachine, long previousCpuId, long cpuId,
+        boolean machineActive) {
+        return !sameMachine || previousCpuId != cpuId || !machineActive;
     }
 
     private void sampleTimingTargets(long now, boolean refreshTiming) {
@@ -151,6 +168,12 @@ public final class XTProfileRouteTracker {
                 add(medium.activeTicksByCpu, target.cpuId, 1);
             }
         }
+    }
+
+    private static TileEntity resolveMachine(TileEntity target) {
+        if (target == null || target.isInvalid()) return null;
+        TileEntity resolved = XTProfileMachineResolver.resolve(target);
+        return resolved instanceof IGregTechTileEntity ? resolved : null;
     }
 
     private static TileEntity findMachine(ICraftingMedium medium) {
