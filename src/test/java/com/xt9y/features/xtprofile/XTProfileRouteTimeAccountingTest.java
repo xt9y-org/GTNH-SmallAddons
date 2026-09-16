@@ -7,27 +7,60 @@ import org.junit.jupiter.api.Test;
 class XTProfileRouteTimeAccountingTest {
 
     @Test
-    void runningSamplesAddOnlyActualMachineWallClockTime() {
+    void completedOperationCountsOnlyMachineTicksAndUnionsParallelCoverage() {
         XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
+        XTProfileIntervalUnion all = new XTProfileIntervalUnion();
+        XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
-        XTProfileRouteTracker.accountRunningTick(medium, 1L, 100L, 300L, 10L);
-        XTProfileRouteTracker.accountRunningTick(medium, 1L, 300L, 450L, 20L);
+        XTProfileRouteTracker.accountCompletedMachineTicks(
+            medium,
+            1L,
+            "medium:assline",
+            "machine:assline",
+            10L,
+            50L,
+            8_000L,
+            all,
+            cpu);
+        XTProfileRouteTracker.accountCompletedMachineTicks(
+            medium,
+            1L,
+            "medium:assline",
+            "machine:assline",
+            20L,
+            50L,
+            6_000L,
+            all,
+            cpu);
 
-        assertEquals(350L, medium.busyNs);
-        assertEquals(350L, medium.busyNsByCpu.get(1L));
-        assertEquals(30L, medium.tickCostNs);
-        assertEquals(2L, medium.activeTicks);
+        assertEquals(2_000_000_000L, medium.busyNs);
+        assertEquals(2_000_000_000L, medium.busyNsByCpu.get(1L));
+        assertEquals(8_000L, medium.tickCostNs);
+        assertEquals(40L, medium.activeTicks);
+        assertEquals(8_000L, medium.tickCostNsByCpu.get(1L));
+        assertEquals(40L, medium.activeTicksByCpu.get(1L));
     }
 
     @Test
-    void cpuMachineTimeStaysIndependentWhileAllTimeAccumulatesBoth() {
+    void zeroMachineTicksNeverTurnsQueueLatencyIntoCraftTime() {
         XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
+        XTProfileIntervalUnion all = new XTProfileIntervalUnion();
+        XTProfileIntervalUnion cpu = new XTProfileIntervalUnion();
 
-        XTProfileRouteTracker.accountRunningTick(medium, 1L, 100L, 300L, 10L);
-        XTProfileRouteTracker.accountRunningTick(medium, 2L, 300L, 450L, 20L);
+        XTProfileRouteTracker.accountCompletedMachineTicks(
+            medium,
+            7L,
+            "medium:queued",
+            "machine:mixer",
+            100L,
+            100L,
+            999_999_999L,
+            all,
+            cpu);
 
-        assertEquals(350L, medium.busyNs);
-        assertEquals(200L, medium.busyNsByCpu.get(1L));
-        assertEquals(150L, medium.busyNsByCpu.get(2L));
+        assertEquals(0L, medium.busyNs);
+        assertEquals(0L, medium.busyNsByCpu.getOrDefault(7L, 0L));
+        assertEquals(0L, medium.tickCostNs);
+        assertEquals(0L, medium.activeTicks);
     }
 }
