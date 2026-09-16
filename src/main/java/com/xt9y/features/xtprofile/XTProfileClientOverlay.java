@@ -288,9 +288,9 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         drawToggle(mc, allLeft, panelTop + 4, ALL_TOGGLE_WIDTH, "All", sessionScope);
 
         String scope = message == null ? "Routes" : sessionScope ? "Session" : message.cpuName;
-        mc.fontRenderer.drawString(fit(scope, 82, mc), panelLeft + 8, panelTop + 19, DIM_TEXT);
-        drawRight(mc, "Time", panelLeft + TIME_RIGHT, panelTop + 19, DIM_TEXT);
-        drawRight(mc, "TPS", panelLeft + TPS_RIGHT, panelTop + 19, DIM_TEXT);
+        mc.fontRenderer.drawString(fit(scope, 82, mc), panelLeft + 8, panelTop + 16, DIM_TEXT);
+        drawRight(mc, "Time", panelLeft + TIME_RIGHT, panelTop + 16, DIM_TEXT);
+        drawRight(mc, "TPS", panelLeft + TPS_RIGHT, panelTop + 16, DIM_TEXT);
     }
 
     private void drawRows(XTProfilePanelData.View view) {
@@ -351,17 +351,15 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
         if (infoEntry != null) {
             int infoY = panelTop + 174;
-            String info = infoEntry.hasLocation ? "Shift-click: highlight" : "No world position";
-            mc.fontRenderer.drawString(info, panelLeft + 8, infoY, DIM_TEXT);
+            if (!infoEntry.hasLocation) {
+                mc.fontRenderer.drawString("No world position", panelLeft + 8, infoY, DIM_TEXT);
+            }
 
             if (infoEntry.machine != null && !infoEntry.machine.isEmpty()) {
                 String machine = fit(infoEntry.machine, 92, mc);
                 int x = panelLeft + PANEL_WIDTH - 8 - mc.fontRenderer.getStringWidth(machine);
                 mc.fontRenderer.drawString(machine, x, infoY, DIM_TEXT);
             }
-        } else {
-            mc.fontRenderer
-                .drawString("Scroll for more · Shift-click highlights", panelLeft + 8, panelTop + 174, DIM_TEXT);
         }
     }
 
