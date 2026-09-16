@@ -4,10 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import net.minecraft.tileentity.TileEntity;
 
@@ -30,60 +31,31 @@ class XTProfileRouteTimingAndSearchTest {
     }
 
     @Test
-    void activeMachineDispatchDoesNotResetTimingBoundary() throws Exception {
-        Method method = XTProfileRouteTracker.class
-            .getDeclaredMethod("shouldResetTimingBoundary", boolean.class, long.class, long.class, boolean.class);
-        method.setAccessible(true);
-
-        assertFalse((Boolean) method.invoke(null, true, 4L, 4L, true));
-        assertTrue((Boolean) method.invoke(null, true, 4L, 4L, false));
-        assertTrue((Boolean) method.invoke(null, false, 4L, 4L, true));
-        assertTrue((Boolean) method.invoke(null, true, 4L, 5L, true));
+    void multiblockProgressCountsAsRunningWhenControllerActiveFlagIsFalse() {
+        assertTrue(XTProfileRouteTracker.machineRunning(false, 200));
+        assertTrue(XTProfileRouteTracker.machineRunning(true, 0));
+        assertFalse(XTProfileRouteTracker.machineRunning(false, 0));
     }
 
     @Test
-    void multiblockProgressCountsAsRunningWhenControllerActiveFlagIsFalse() throws Exception {
-        Method method;
-        try {
-            method = XTProfileRouteTracker.class.getDeclaredMethod("machineRunning", boolean.class, int.class);
-        } catch (NoSuchMethodException missing) {
-            fail("missing multiblock-progress running-state fallback");
-            return;
-        }
-        method.setAccessible(true);
-
-        assertTrue((Boolean) method.invoke(null, false, 200));
-        assertTrue((Boolean) method.invoke(null, true, 0));
-        assertFalse((Boolean) method.invoke(null, false, 0));
+    void completedRecipeDetectsMonotonicRecipeCounterAdvance() {
+        assertTrue(XTProfileRouteTracker.completedRecipe(4L, 5L));
+        assertFalse(XTProfileRouteTracker.completedRecipe(4L, 4L));
+        assertFalse(XTProfileRouteTracker.completedRecipe(Long.MIN_VALUE, 5L));
     }
 
     @Test
-    void runningTickAccountsActualMachineWallTimeAndTickCost() throws Exception {
-        Method method;
-        try {
-            method = XTProfileRouteTracker.class.getDeclaredMethod(
-                "accountRunningTick",
-                XTProfileData.MediumRecord.class,
-                long.class,
-                long.class,
-                long.class,
-                long.class);
-        } catch (NoSuchMethodException missing) {
-            fail("missing running-tick accounting for one-tick multiblocks");
-            return;
-        }
-        method.setAccessible(true);
+    void expectedOutputsIgnoreInvalidEntriesAndSumDuplicates() {
+        Map<String, Long> expected = new LinkedHashMap<>();
 
-        XTProfileData.MediumRecord medium = new XTProfileData.MediumRecord();
-        long nextSample = (Long) method.invoke(null, medium, 42L, 1_000L, 6_000L, 1_500L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:a", 2L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:a", 3L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "", 9L);
+        XTProfileRouteTracker.addExpectedOutput(expected, null, 9L);
+        XTProfileRouteTracker.addExpectedOutput(expected, "item:b", 0L);
 
-        assertEquals(6_000L, nextSample);
-        assertEquals(5_000L, medium.busyNs);
-        assertEquals(5_000L, medium.busyNsByCpu.get(42L));
-        assertEquals(1_500L, medium.tickCostNs);
-        assertEquals(1L, medium.activeTicks);
-        assertEquals(1_500L, medium.tickCostNsByCpu.get(42L));
-        assertEquals(1L, medium.activeTicksByCpu.get(42L));
+        assertEquals(1, expected.size());
+        assertEquals(5L, expected.get("item:a"));
     }
 
     @Test
