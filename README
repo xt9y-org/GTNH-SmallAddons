@@ -27,10 +27,9 @@ result --> reserved once, not consumed, returned after craft
 wildcard + NC --> supported
 
 XTProfile
-start --> /xt9y profile start
-controls --> /xt9y profile [start|status|reset|stop]
+location --> automatic inside the AE2 Crafting CPU window
 CPU --> per-crafting-CPU Interface / CRIB / machine routes
-All --> complete profiling session
+All --> complete server-session view
 Time --> AE2 processing dispatch until expected output returns
 parallel --> overlapping route operations are not double-counted
 TPS --> separate GregTech machine tick-cost sampling

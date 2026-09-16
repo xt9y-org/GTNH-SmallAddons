@@ -19,6 +19,6 @@ public abstract class MixinDualityInterfaceXTProfile {
     @Inject(method = "onPushPatternSuccess", at = @At("HEAD"))
     private void xtprofile$target(TileEntity target, ForgeDirection side, ICraftingPatternDetails pattern,
         CallbackInfo ci) {
-        XTProfileDispatchContext.recordTarget(target, pattern);
+        XTProfileDispatchContext.recordTarget(target);
     }
 }
