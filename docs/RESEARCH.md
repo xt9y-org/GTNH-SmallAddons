@@ -27,10 +27,10 @@ VRAM, chunk rebuilds, world RAM and server/network serialization.
 
 1. Cache render bounding box and max render distance together, with O(1) hot validity check.
 2. Invalidate on edit, tile-list replacement, explicit render invalidation, and unload.
-3. Exclude custom/animated tiles to avoid stale dynamic visibility bounds.
+3. Cache static tiles in mixed structures while recomputing animated/custom tile bounds every query.
 4. Eliminate the second `updateRender` only inside `updateTiles`; preserve normal neighbor notifications.
 5. Provide runtime diagnostics and opt-out config.
-6. Add cache-key unit tests and Java 21 Gradle CI.
+6. Add cache-key and frame-percentile unit tests and Java 21 Gradle CI.\n7. Add optional fixed-memory client frame-time sampling for benchmark p50/p95/p99 (not GPU timestamps).
 
 ## Next high-impact experiments (NOT yet implemented)
 
