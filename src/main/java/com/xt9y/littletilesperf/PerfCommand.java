@@ -43,7 +43,8 @@ public final class PerfCommand extends CommandBase {
             }
         }
         sender.addChatMessage(new ChatComponentText(
-            "[LittleTilesPerf] spatial=" + PerfSettings.spatialFaceCulling
+            "[LittleTilesPerf] merge=" + PerfSettings.mergeOpaqueMicrotiles
+                + " spatial=" + PerfSettings.spatialFaceCulling
                 + " boundsCache=" + PerfSettings.cacheStaticRenderBounds
                 + " deduplicate=" + PerfSettings.skipDuplicateRenderInvalidation));
         sender.addChatMessage(new ChatComponentText("[LittleTilesPerf] " + PerfStats.summary()));
