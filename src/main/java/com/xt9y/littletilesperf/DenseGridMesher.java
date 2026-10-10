@@ -40,6 +40,48 @@ public final class DenseGridMesher {
     }
 
     /**
+     * Opt-in distant LOD: seal sub-voxel cavities *inside* a block only.
+     * Leaves two voxels of boundary unchanged and never replaces one solid
+     * material with another. Mixed-material groups and groups intersecting
+     * custom/transparent bounding boxes are kept exact.
+     *
+     * The caller MUST request a rebuild on transitions back to near LOD.
+     */
+    public static int[] simplifyDistantInterior(int[] source, boolean[] protectedCells) {
+        if (source.length != VOLUME || protectedCells.length != VOLUME)
+            throw new IllegalArgumentException("Expected 16^3 cells");
+        int[] cells = source.clone();
+        for (int y = 2; y < EDGE - 2; y += 2) {
+            for (int z = 2; z < EDGE - 2; z += 2) {
+                for (int x = 2; x < EDGE - 2; x += 2) {
+                    int material = 0, filled = 0;
+                    boolean mixed = false, blocked = false;
+                    for (int dy = 0; dy < 2; dy++) {
+                        for (int dz = 0; dz < 2; dz++) {
+                            for (int dx = 0; dx < 2; dx++) {
+                                int at = index(x + dx, y + dy, z + dz);
+                                if (protectedCells[at]) blocked = true;
+                                int value = source[at];
+                                if (value != 0) {
+                                    if (material != 0 && material != value) mixed = true;
+                                    material = value;
+                                    filled++;
+                                }
+                            }
+                        }
+                    }
+                    if (blocked || mixed || material == 0 || filled < 7 || filled == 8) continue;
+                    for (int dy = 0; dy < 2; dy++)
+                        for (int dz = 0; dz < 2; dz++)
+                            for (int dx = 0; dx < 2; dx++)
+                                cells[index(x + dx, y + dy, z + dz)] = material;
+                }
+            }
+        }
+        return cells;
+    }
+
+    /**
      * At most 4096 cells, so no large objects and no quadratic tile comparisons.
      * Expands contiguous material runs along X, Z then Y. Clearing consumed
      * cells guarantees non-overlapping, full coverage of every occupied voxel.
