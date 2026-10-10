@@ -26,6 +26,16 @@ public abstract class MixinLittleTilesFaceCuller {
         throw new AssertionError("Mixin shadow not applied");
     }
 
+    @Inject(method = "computeCoverage", at = @At("RETURN"), cancellable = true, remap = false)
+    private static void ltperf$cullOpaqueFaces(IBlockAccess world, List<LittleTilesCubeObject> cubes,
+                                                int x, int y, int z,
+                                                CallbackInfoReturnable<IFaceClipper[]> cir) {
+        if (PerfSettings.cullBuriedOpaqueFaces) {
+            IFaceClipper[] coverage = cir.getReturnValue();
+            if (coverage != null) OpaqueFaceCuller.apply(cubes, coverage);
+        }
+    }
+
     @Inject(method = "computeCoverage", at = @At("HEAD"), cancellable = true, remap = false)
     private static void ltperf$spatialCoverage(IBlockAccess world, List<LittleTilesCubeObject> cubes,
                                                int x, int y, int z,
@@ -37,6 +47,7 @@ public abstract class MixinLittleTilesFaceCuller {
         if (clippers == null) return;
 
         coverNeighbours(world, cubes, clippers, x, y, z);
+        if (PerfSettings.cullBuriedOpaqueFaces) OpaqueFaceCuller.apply(cubes, clippers);
         cir.setReturnValue(clippers);
     }
 }
