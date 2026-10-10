@@ -72,20 +72,19 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         at = @At("HEAD"), cancellable = true, remap = false)
     private void ltperf$getBounds(CallbackInfoReturnable<AxisAlignedBB> cir) {
         RenderSnapshot snapshot = ltperf$getSnapshot();
-        if (snapshot != null) cir.setReturnValue(snapshot.bounds);
+        if (snapshot != null) cir.setReturnValue(ltperf$boundsWithDynamicTiles(snapshot));
     }
 
     @Inject(method = "getMaxRenderDistanceSquared()D",
         at = @At("HEAD"), cancellable = true, remap = false)
     private void ltperf$getDistance(CallbackInfoReturnable<Double> cir) {
         RenderSnapshot snapshot = ltperf$getSnapshot();
-        if (snapshot != null) cir.setReturnValue(snapshot.distanceSquared);
+        if (snapshot != null) cir.setReturnValue(ltperf$distanceWithDynamicTiles(snapshot));
     }
 
     @Unique
     private RenderSnapshot ltperf$getSnapshot() {
-        if (!PerfSettings.cacheStaticRenderBounds
-            || customRenderingTiles == null || !customRenderingTiles.isEmpty()) return null;
+        if (!PerfSettings.cacheStaticRenderBounds || customRenderingTiles == null) return null;
 
         List<LittleTile> tiles = getTiles();
         long revision = ltperf$revision;
@@ -108,6 +107,9 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         double maxX = xCoord + 1, maxY = yCoord + 1, maxZ = zCoord + 1;
         double maxDistance = 0;
         for (LittleTile tile : members) {
+            // Custom-rendering tiles can have animated geometry. Only retain the
+            // static subset; dynamic bounds are unioned on every query below.
+            if (tile.needCustomRendering()) continue;
             AxisAlignedBB bounds = tile.getRenderBoundingBox();
             if (bounds != null) {
                 minX = Math.min(minX, bounds.minX);
@@ -130,6 +132,40 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         ltperf$snapshot = built;
         PerfStats.miss(members.size());
         return built;
+    }
+
+
+    @Unique
+    private AxisAlignedBB ltperf$boundsWithDynamicTiles(RenderSnapshot staticSnapshot) {
+        if (customRenderingTiles.isEmpty()) return staticSnapshot.bounds;
+        AxisAlignedBB staticBounds = staticSnapshot.bounds;
+        double minX = staticBounds.minX, minY = staticBounds.minY, minZ = staticBounds.minZ;
+        double maxX = staticBounds.maxX, maxY = staticBounds.maxY, maxZ = staticBounds.maxZ;
+        for (LittleTile tile : customRenderingTiles) {
+            AxisAlignedBB box = tile.getRenderBoundingBox();
+            if (box == null) continue;
+            minX = Math.min(minX, box.minX);
+            minY = Math.min(minY, box.minY);
+            minZ = Math.min(minZ, box.minZ);
+            maxX = Math.max(maxX, box.maxX);
+            maxY = Math.max(maxY, box.maxY);
+            maxZ = Math.max(maxZ, box.maxZ);
+        }
+        return AxisAlignedBB.getBoundingBox(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    @Unique
+    private double ltperf$distanceWithDynamicTiles(RenderSnapshot staticSnapshot) {
+        double maxDistance = staticSnapshot.distanceSquared;
+        for (LittleTile tile : customRenderingTiles) {
+            maxDistance = Math.max(maxDistance, tile.getMaxRenderDistanceSquared());
+        }
+        return maxDistance;
+    }
+
+    @Inject(method = "updateCustomRenderer()V", at = @At("RETURN"), remap = false)
+    private void ltperf$customRendererChanged(CallbackInfo ci) {
+        ltperf$invalidate();
     }
 
     // LittleTiles.updateTiles invokes update() followed by updateNeighbor().
