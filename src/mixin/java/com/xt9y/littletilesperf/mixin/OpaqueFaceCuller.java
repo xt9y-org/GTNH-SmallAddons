@@ -9,6 +9,7 @@ import com.creativemd.creativecore.client.rendering.FacePiece;
 import com.creativemd.creativecore.client.rendering.IFaceClipper;
 import com.creativemd.littletiles.common.utils.LittleTilesCubeObject;
 import com.xt9y.littletilesperf.DenseGridMesher;
+import com.xt9y.littletilesperf.PerfStats;
 
 /**
  * Removes fully buried faces of ordinary opaque micro-cuboids even when their
@@ -61,6 +62,7 @@ final class OpaqueFaceCuller {
             }
         }
 
+        int removed = 0;
         for (int i = 0; i < cubes.size(); i++) {
             LittleTilesCubeObject cube = cubes.get(i);
             if (!solid(cube) || coverage[i] != null) continue;
@@ -68,8 +70,12 @@ final class OpaqueFaceCuller {
             for (ForgeDirection face : ForgeDirection.VALID_DIRECTIONS) {
                 if (buried(cube, face, occupied)) mask |= 1 << face.ordinal();
             }
-            if (mask != 0) coverage[i] = new HiddenFaces(mask);
+            if (mask != 0) {
+                coverage[i] = new HiddenFaces(mask);
+                removed += Integer.bitCount(mask);
+            }
         }
+        PerfStats.hiddenOpaqueFaces(removed);
     }
 
     static boolean buried(LittleTilesCubeObject c, ForgeDirection side, boolean[] solid) {
