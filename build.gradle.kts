@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     // Matches the 1.7.10 GTNH LittleTiles API, not the modern CreativeMD implementation.
-    api("com.github.GTNewHorizons:LittleTiles:1.6.53:dev")
+    api("com.github.GTNewHorizons:LittleTiles:1.6.59:dev")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 
