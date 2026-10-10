@@ -20,6 +20,7 @@ import com.creativemd.littletiles.common.utils.LittleTile;
 import com.xt9y.littletilesperf.CacheKey;
 import com.xt9y.littletilesperf.PerfSettings;
 import com.xt9y.littletilesperf.PerfStats;
+import com.xt9y.littletilesperf.RenderSnapshot;
 
 /**
  * LittleTiles 1.7.10 integration. Cache only render metadata, never world tile contents
@@ -205,23 +206,4 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         }
     }
 
-    @Unique
-    private static final class RenderSnapshot {
-
-        private final long revision;
-        private final int size, x, y, z;
-        private final AxisAlignedBB bounds;
-        private final double distanceSquared;
-
-        private RenderSnapshot(long revision, int size, int x, int y, int z,
-                               AxisAlignedBB bounds, double distanceSquared) {
-            this.revision = revision;
-            this.size = size;
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.bounds = bounds;
-            this.distanceSquared = distanceSquared;
-        }
-    }
 }
