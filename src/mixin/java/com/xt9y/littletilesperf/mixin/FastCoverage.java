@@ -27,10 +27,14 @@ final class FastCoverage {
     static FaceClipper[] local(List<LittleTilesCubeObject> cubes) {
         if (cubes.size() < MIN_CUBES) return null;
 
-        // Non-standard coordinates must use upstream's unrestricted integer math.
+        // Leave all-opaque and mostly-opaque blocks on upstream's simple path.
+        // Their original scan has no expensive face-clipping pairs to accelerate.
+        int eligibleCount = 0;
         for (LittleTilesCubeObject c : cubes) {
             if (!valid(c)) return null;
+            if (eligible(c)) eligibleCount++;
         }
+        if (eligibleCount < 8) return null;
 
         @SuppressWarnings("unchecked")
         List<LittleTilesCubeObject>[][] bySide = (List<LittleTilesCubeObject>[][]) new List[SIDES][GRID + 1];
