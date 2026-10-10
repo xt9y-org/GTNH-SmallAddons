@@ -12,6 +12,7 @@ public final class PerfSettings {
 
     public static volatile boolean cacheStaticRenderBounds = true;
     public static volatile boolean mergeOpaqueMicrotiles = true;
+    public static volatile boolean cacheOpaqueRenderCubes = true;
     public static volatile boolean cullBuriedOpaqueFaces = true;
     public static volatile boolean distantLod = false;
     public static volatile int distantLodDistanceBlocks = 112;
@@ -36,6 +37,9 @@ public final class PerfSettings {
         cullBuriedOpaqueFaces = cfg.getBoolean(
             "cullBuriedOpaqueFaces", "rendering", true,
             "Remove completely buried faces between ordinary opaque microtiles, including different materials.");
+        cacheOpaqueRenderCubes = cfg.getBoolean(
+            "cacheOpaqueRenderCubes", "rendering", true,
+            "Retain immutable merged opaque render descriptors until the block's render generation changes.");
         mergeOpaqueMicrotiles = cfg.getBoolean(
             "mergeOpaqueMicrotiles", "rendering", true,
             "Exactly coalesce fully opaque standard cuboids with identical block/meta/color before Angelica meshing.");
