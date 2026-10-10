@@ -18,7 +18,7 @@ neighbor notifications in place.
 
 **These are CPU optimizations, not a replacement for Angelica or a new GPU renderer.**
 Existing LittleTiles geometry and save files are untouched. Static builds benefit most.
-Animated structures and custom-rendering tiles fall back to the original render calculations.
+Mixed static/animated tile entities cache only the static subset; dynamic parts are recomputed on each query.
 
 ## Build & install
 
@@ -41,7 +41,7 @@ Do not replace LittleTiles or Angelica. Keep the original jar as a rollback path
   during `updateTiles` (disable first if edited tiles visually fail to update).
 - `diagnostics.collectStatistics=false` — leave off for production benchmarking.
 
-Run `/ltperf` in the client. `/ltperf stats on` starts recording diagnostic counters;
+Run `/ltperf` in the client. `/ltperf stats on` starts recording diagnostic counters and a 2,048-frame ring buffer of frame intervals (p50/p95/p99);
 `/ltperf stats reset` resets them; `/ltperf stats off` stops counting.
 
 ## Benchmark protocol
@@ -55,7 +55,7 @@ Run `/ltperf` in the client. `/ltperf stats on` starts recording diagnostic coun
 5. Test stationary multi-million-tile builds, heavy editing, chunk loading, colorful
    tiles, sloped/cutout tiles, and animated doors separately.
 
-FPS and memory gains **have not yet been validated on your actual world**.
+Frame intervals measure client pacing, **not GPU timestamps**. FPS and memory gains **have not yet been validated on your actual world**.
 A bounded GPU, RAM and chunk-build budget makes strictly zero FPS cost for unlimited
 visible geometry impossible. See `docs/RESEARCH.md` for next steps.
 
