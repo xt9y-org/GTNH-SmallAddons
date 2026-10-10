@@ -16,6 +16,12 @@ Also, in the verified GTNH code path, `updateTiles(boolean)` calls `update()` th
 redundant render invalidation only during that specific update, leaving normal
 neighbor notifications in place.
 
+Additionally, dense translucent blocks previously ran an O(T²) local occluder search
+in `LittleTilesFaceCuller.computeCoverage`. The new spatial index buckets potential
+occluders by six face directions and the 1/16-block coordinate plane, preserving the
+upstream clipping and neighbor-block pass. It is enabled only for at least 64 tiles
+with at least 8 cullable tiles; smaller/opaque-heavy/unusual cases use upstream.
+
 **These are CPU optimizations, not a replacement for Angelica or a new GPU renderer.**
 Existing LittleTiles geometry and save files are untouched. Static builds benefit most.
 Mixed static/animated tile entities cache only the static subset; dynamic parts are recomputed on each query.
@@ -36,6 +42,9 @@ Do not replace LittleTiles or Angelica. Keep the original jar as a rollback path
 
 `config/littletilesperf.cfg`:
 
+- `rendering.spatialFaceCulling=true` — index glass/translucent face-occluder candidates
+  rather than compare every microtile with every other. Switch off if translucent faces
+  appear incorrect in-game.
 - `rendering.cacheStaticRenderBounds=true` — cache bounds and render range for unanimated tiles.
 - `rendering.skipDuplicateRenderInvalidation=true` — eliminate duplicate invalidation
   during `updateTiles` (disable first if edited tiles visually fail to update).
@@ -51,7 +60,7 @@ Run `/ltperf` in the client. `/ltperf stats on` starts recording diagnostic coun
 2. Record median FPS, p95/p99 frame times, memory and chunk-rebuild latency over
    a fixed camera route in the **unmodified GTNH client**.
 3. Add this jar, warm up the same route, and record the same metrics.
-4. Repeat with each optimization disabled independently to isolate regressions.
+4. Repeat with each optimization disabled independently to isolate regressions, especially dense glass walls.
 5. Test stationary multi-million-tile builds, heavy editing, chunk loading, colorful
    tiles, sloped/cutout tiles, and animated doors separately.
 
@@ -65,4 +74,5 @@ Designed against the GTNH 1.7.10 LittleTiles tile-entity source with `updateTile
 `updateNeighbor()`, `getRenderBoundingBox()` and `getMaxRenderDistanceSquared()`.
 The Mixin is client-only. Other Mixin mods that redirect those *same*
 `updateNeighbor/updateTiles` call sites may conflict; disable `skipDuplicateRenderInvalidation`
-or remove the jar if needed. Mod versions other than the tested source need verification.
+or remove the jar if needed. No completed build or in-game performance validation has been reported yet. This branch targets the
+GTNH LittleTiles 1.6.59 dependency; other versions require compatibility verification.
