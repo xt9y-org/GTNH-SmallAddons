@@ -26,6 +26,7 @@ public final class LittleTilesPerf {
     public void init(FMLInitializationEvent event) {
         if (FMLCommonHandler.instance().getSide().isClient()) {
             ClientCommandHandler.instance.registerCommand(new PerfCommand());
+            FMLCommonHandler.instance().bus().register(FrameTimes.INSTANCE);
         }
     }
 }
