@@ -19,6 +19,7 @@ import com.creativemd.littletiles.common.tileentity.TileEntityLittleTiles;
 import com.creativemd.littletiles.common.utils.LittleTile;
 import com.creativemd.littletiles.common.utils.LittleTilesCubeObject;
 import com.xt9y.littletilesperf.CacheKey;
+import com.xt9y.littletilesperf.ClientLodManager;
 import com.xt9y.littletilesperf.PerfSettings;
 import com.xt9y.littletilesperf.PerfStats;
 import com.xt9y.littletilesperf.RenderSnapshot;
@@ -63,6 +64,11 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         ltperf$invalidate();
     }
 
+    @Inject(method = "invalidate()V", at = @At("RETURN"), remap = false)
+    private void ltperf$removeLodTracking(CallbackInfo ci) {
+        ClientLodManager.INSTANCE.untrack((TileEntityLittleTiles) (Object) this);
+    }
+
     @Unique
     private void ltperf$invalidate() {
         ltperf$revision++;
@@ -79,7 +85,10 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
             CallbackInfoReturnable<ArrayList<LittleTilesCubeObject>> cir) {
         if (!PerfSettings.mergeOpaqueMicrotiles || !customRenderingTiles.isEmpty()) return;
         ArrayList<LittleTilesCubeObject> source = cir.getReturnValue();
-        if (source != null) cir.setReturnValue(MergedCubeRenderer.merge(source));
+        if (source != null) {
+            boolean distant = ClientLodManager.INSTANCE.wantsDistantMesh((TileEntityLittleTiles) (Object) this);
+            cir.setReturnValue(MergedCubeRenderer.merge(source, distant));
+        }
     }
 
     @Inject(method = "getRenderBoundingBox()Lnet/minecraft/util/AxisAlignedBB;",
