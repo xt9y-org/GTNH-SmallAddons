@@ -11,8 +11,13 @@ public final class PerfStats {
     private static final LongAdder SCANNED_TILES = new LongAdder();
     private static final LongAdder MERGED_INPUT = new LongAdder();
     private static final LongAdder MERGED_OUTPUT = new LongAdder();
+    private static final LongAdder HIDDEN_OPAQUE_FACES = new LongAdder();
 
     private PerfStats() {}
+
+    public static void hiddenOpaqueFaces(int count) {
+        if (PerfSettings.collectStatistics && count > 0) HIDDEN_OPAQUE_FACES.add(count);
+    }
 
     public static void merged(int before, int after) {
         if (PerfSettings.collectStatistics) {
@@ -46,6 +51,7 @@ public final class PerfStats {
             + " microtiles scanned on misses=" + SCANNED_TILES.sum()
             + " duplicate invalidations avoided=" + DUPLICATE_RENDERS_SKIPPED.sum()
             + " merged cubes " + MERGED_INPUT.sum() + " -> " + MERGED_OUTPUT.sum()
+            + " buried opaque faces skipped=" + HIDDEN_OPAQUE_FACES.sum()
             + " statistics=" + (PerfSettings.collectStatistics ? "on" : "off");
     }
 
@@ -57,5 +63,6 @@ public final class PerfStats {
         SCANNED_TILES.reset();
         MERGED_INPUT.reset();
         MERGED_OUTPUT.reset();
+        HIDDEN_OPAQUE_FACES.reset();
     }
 }
