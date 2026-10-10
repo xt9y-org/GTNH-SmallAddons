@@ -1,4 +1,3 @@
-
 pluginManagement {
     repositories {
         maven {
@@ -14,9 +13,7 @@ pluginManagement {
         mavenLocal()
     }
 }
-
 plugins {
     id("com.gtnewhorizons.gtnhsettingsconvention") version("2.0.26")
 }
-
-rootProject.name = "xt9y-features"
+rootProject.name = "little-tiles-perf"
