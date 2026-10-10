@@ -33,7 +33,10 @@ public final class PerfCommand extends CommandBase {
 
             if ("on".equalsIgnoreCase(action)) PerfSettings.collectStatistics = true;
             else if ("off".equalsIgnoreCase(action)) PerfSettings.collectStatistics = false;
-            else if ("reset".equalsIgnoreCase(action)) PerfStats.reset();
+            else if ("reset".equalsIgnoreCase(action)) {
+                PerfStats.reset();
+                FrameTimes.INSTANCE.reset();
+            }
             else if (!"status".equalsIgnoreCase(action) && !"stats".equalsIgnoreCase(action)) {
                 sender.addChatMessage(new ChatComponentText(getCommandUsage(sender)));
                 return;
@@ -43,5 +46,6 @@ public final class PerfCommand extends CommandBase {
             "[LittleTilesPerf] cache=" + PerfSettings.cacheStaticRenderBounds
                 + " deduplicate=" + PerfSettings.skipDuplicateRenderInvalidation));
         sender.addChatMessage(new ChatComponentText("[LittleTilesPerf] " + PerfStats.summary()));
+        sender.addChatMessage(new ChatComponentText("[LittleTilesPerf] " + FrameTimes.INSTANCE.report()));
     }
 }
