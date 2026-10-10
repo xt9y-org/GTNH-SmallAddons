@@ -54,18 +54,62 @@ each) matched the brute-force face candidate and ordering rules for randomized b
 material IDs, opaque exclusions, and cutout exclusions. This is a **model check only**, not a
 compiled Minecraft integration test; visual correctness with custom blocks needs in-game validation.
 
+## Renderer-facing geometry work in this branch
+
+These features run during LittleTiles' `getRenderingCubes()` / `computeCoverage()`
+calls, before its `SpecialBlockTilesRenderer.renderWorldBlock` submits geometry to
+the same ISBRH pipeline used by Angelica. Angelica keeps ownership of its
+multi-threaded chunk compilation, lightmaps, shader material passes, VBO
+upload and frustum culling.
+
+- `DenseGridMesher`: bounds-limited 16×16×16 occupancy rasterization and
+  deterministic exact greedy cuboids. Matches `Block` identity, metadata and tint.
+  Preserves unsupported meshes, partial and transparent shapes through fallback.
+- `MergedCubeRenderer`: rejects overlapping cells and tiles with unknown render
+  types; never alters real `LittleTile` objects. Only exact `LittleTileBlock`
+  and `LittleTileBlockColored` types are considered, excluding structures.
+- `OpaqueFaceCuller`: removes faces for which every neighboring 1/16 cell is
+  occupied by a standard opaque block. Supports different material boundaries;
+  leaves partially occluded and external faces unchanged. Uses a lightweight
+  `IFaceClipper` rather than the expensive triangle-culling pipeline.
+- `RenderCubeSnapshot`: versioned compact descriptor cache. Both the method
+  return and cached snapshot use separate list wrappers to avoid accidental list
+  mutations. Invalidated on edit, neighbor geometry update and chunk unload.
+- `ClientLodManager`: optional distance-band tracking with limited mesh
+  invalidations per tick; the 2×2×2 interior-only simplifier refuses to change
+  differing materials, cutout collision volumes or block boundary voxels.
+
+The render-cube cache is limited to 100% opaque standard geometry.
+This is not a generic translucent/UV-aware surface atlas merger.
+
+### Computational model
+
+Let N be microtile cubes in one block, V ≤ 4,096 grid voxels, F the emitted
+faces. The previous renderer processes O(N) cubes and up to O(6N) faces, plus
+any special clipping costs. The exact greedy prepass costs O(N + V + material
+lookup overhead) for disjoint boxes, and reduces emitted geometry to O(6M)
+where M is the number of merged boxes. In large homogeneous constructions,
+M may be dramatically smaller than N. Faces hidden between different opaque
+material boxes are also removed by a bounded-voxel check.
+
+Actual CPU time, VBO bytes, GPU utilization, chunk rebuild latency, memory
+retention, and visual parity **must be measured** on the user's real save.
+The source-level complexity does not establish any FPS or GPU speedup.
+
 ## Next high-impact experiments (NOT yet implemented)
 
 1. **Capture ground truth first:** use Spark/async-profiler CPU sampling and Angelica chunk-meshing
    counters to distinguish idle FPS, frame spikes and rebuild latency.
-2. **Greedy mesh union of fully coplanar, compatible *visible* faces** across multiple
-   microtiles; preserve UV orientation, metadata, color tint, lightmap, collision,
-   translucent sorting, and sloped/cutout meshes. Needs source-level integration in
-   LittleTiles/Angelica, not a naive TE renderer overwrite.
-3. **Visibility/LOD:** reduce distant microgeometry based on screen-space error and material,
-   while retaining silhouettes. Optional distant billboards/impostors for large static bases.
-4. **Chunk-mesh cache:** safely reuse meshes of repeated built structures with content-addressed
-   signatures and reference-counted GPU resources, invalidating on lighting/material edits.
+2. **Cross-block and UV-aware face merging:** extend the within-block greedy
+   box union to carefully stitch visible coplanar surfaces across block
+   boundaries while preserving texture tile repetition, shader material
+   overrides, AO and per-block lighting.
+3. **Real visual LOD:** replace the experimental cavity-only mode with camera-
+   coherent, screen-space-error meshes/impostors for complex exterior detail.
+   Requires dual mesh storage and safe near/far transitions in Angelica.
+4. **Cross-chunk reuse:** instanced GPU meshes for duplicated structures,
+   content-addressed signatures and reference-counted buffer resources; the
+   existing in-block descriptor cache is not a GPU VBO cache.
 5. **Edit batching:** spatially coalesce neighboring render-region invalidations per tick
    without delaying necessary server state changes; stress test multiplayer sync.
 6. **Memory limits:** compressed per-chunk descriptors and bounded LRU for geometry, no
