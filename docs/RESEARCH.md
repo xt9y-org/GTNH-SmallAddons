@@ -17,6 +17,8 @@
 | Chunk mesh collection | `getRenderingCubes()` snapshots membership/cut generations, then creates cube descriptors | O(T) per rebuild; necessary until geometry changes |
 | Geometry cache | `LittleTileGeometryCache` already retains cut meshes/culling result with generation checks | Do not blindly introduce another copy |
 | Edit invalidation | `updateTiles` calls `update` then `updateNeighbor`, both triggering `updateRender` client-side | Duplicate neighbor invalidation and render range marking |
+| Local translucent face culling | `LittleTilesFaceCuller.computeCoverage` loops each cullable cube over **all** cubes in the block | O(T²) worst case; expensive chunk rebuild spikes for dense translucent structures |
+| Already-opaque tiles | Upstream `ignoreForCulling` skips fully opaque blocks | Avoid extra indexing for mostly opaque blocks |
 | GPU | Angelica does buffered, threaded chunk building | Avoid competing global renderer, OptiFine/FastCraft, duplicate meshing |
 
 Here T is the number of microtiles *inside one LittleTiles tile entity*. There are also
@@ -31,6 +33,26 @@ VRAM, chunk rebuilds, world RAM and server/network serialization.
 4. Eliminate the second `updateRender` only inside `updateTiles`; preserve normal neighbor notifications.
 5. Provide runtime diagnostics and opt-out config.
 6. Add cache-key and frame-percentile unit tests and Java 21 Gradle CI.\n7. Add optional fixed-memory client frame-time sampling for benchmark p50/p95/p99 (not GPU timestamps).
+8. Speed up local translucent face culling with six directional integer-grid slab indexes. Only boxes
+   opposite a face's coordinate plane can cover it. The same candidate order per face is retained,
+   as are texture/block metadata/color rules, neighbor-block handling and integer clipping.
+   For <64 tiles, <8 cullable tiles, or out-of-grid geometry, fall back to upstream. Opt-out via
+   `rendering.spatialFaceCulling=false`. This replaces the O(T²) candidate scan with O(T +
+   candidate face pairs) in eligible large blocks, but has **not** yet been benchmarked inside Minecraft.
+
+
+## Additional source-level observation
+
+[LittleTilesFaceCuller.java](https://github.com/GTNewHorizons/LittleTiles/blob/master/src/main/java/com/creativemd/littletiles/client/render/LittleTilesFaceCuller.java)
+contains a quadratic nested loop in `computeCoverage`. It skips opaque microtiles, so ordinary
+stone-heavy builds may never hit it; glass and other translucent microtiles are better targets.
+The adjacent-block coverage still runs unchanged. This patch does **not** reduce GPU vertices:
+transparent surface merging and geometry LOD need separate renderer-integrated work.
+
+A deterministic randomized Python equivalence check (5, 20, 80, 200 candidate sets, 30 iterations
+each) matched the brute-force face candidate and ordering rules for randomized box placements,
+material IDs, opaque exclusions, and cutout exclusions. This is a **model check only**, not a
+compiled Minecraft integration test; visual correctness with custom blocks needs in-game validation.
 
 ## Next high-impact experiments (NOT yet implemented)
 
