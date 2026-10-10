@@ -27,17 +27,18 @@ final class OpaqueFaceCuller {
 
     static void apply(List<LittleTilesCubeObject> cubes, IFaceClipper[] coverage) {
         if (cubes.size() < 2) return;
+        int eligible = 0;
+        for (LittleTilesCubeObject c : cubes) if (solid(c)) eligible++;
+        if (eligible < 2) return;
+
         boolean[] occupied = new boolean[DenseGridMesher.VOLUME];
         boolean[] reserved = new boolean[DenseGridMesher.VOLUME];
-        int eligible = 0;
 
         // A nonstandard tile can overlap the bounding box of an opaque cube.
         // To avoid touching cutouts and geometry overlays, skip the whole
         // optimization when bounding-volume overlap is detected.
         for (LittleTilesCubeObject c : cubes) {
-            if (solid(c)) {
-                eligible++;
-            } else if (c != null) {
+            if (!solid(c) && c != null) {
                 int x0 = Math.max(0, c.gridMinX), x1 = Math.min(EDGE, c.gridMaxX);
                 int y0 = Math.max(0, c.gridMinY), y1 = Math.min(EDGE, c.gridMaxY);
                 int z0 = Math.max(0, c.gridMinZ), z1 = Math.min(EDGE, c.gridMaxZ);
@@ -47,8 +48,6 @@ final class OpaqueFaceCuller {
                             reserved[DenseGridMesher.index(x, y, z)] = true;
             }
         }
-        if (eligible < 2) return;
-
         for (LittleTilesCubeObject c : cubes) {
             if (!solid(c)) continue;
             for (int y = c.gridMinY; y < c.gridMaxY; y++) {
