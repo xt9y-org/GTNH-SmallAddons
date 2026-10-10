@@ -12,6 +12,7 @@ public final class PerfSettings {
 
     public static volatile boolean cacheStaticRenderBounds = true;
     public static volatile boolean mergeOpaqueMicrotiles = true;
+    public static volatile boolean cullBuriedOpaqueFaces = true;
     public static volatile boolean spatialFaceCulling = true;
     public static volatile boolean skipDuplicateRenderInvalidation = true;
     public static volatile boolean collectStatistics = false;
@@ -24,6 +25,9 @@ public final class PerfSettings {
         spatialFaceCulling = cfg.getBoolean(
             "spatialFaceCulling", "rendering", true,
             "Use grid-indexed face coverage for blocks with at least 64 LittleTiles.");
+        cullBuriedOpaqueFaces = cfg.getBoolean(
+            "cullBuriedOpaqueFaces", "rendering", true,
+            "Remove completely buried faces between ordinary opaque microtiles, including different materials.");
         mergeOpaqueMicrotiles = cfg.getBoolean(
             "mergeOpaqueMicrotiles", "rendering", true,
             "Exactly coalesce fully opaque standard cuboids with identical block/meta/color before Angelica meshing.");
