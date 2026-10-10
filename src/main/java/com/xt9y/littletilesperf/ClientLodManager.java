@@ -57,8 +57,6 @@ public final class ClientLodManager {
             State existing = tracked.putIfAbsent(te, fresh);
             state = existing == null ? fresh : existing;
         }
-        // The rebuilt mesh is now compiled from this target LOD.
-        state.compiledFar = state.requestedFar;
         return state.requestedFar;
     }
 
@@ -125,11 +123,9 @@ public final class ClientLodManager {
 
     private static final class State {
         private volatile boolean requestedFar;
-        private volatile boolean compiledFar;
 
         private State(boolean far) {
             requestedFar = far;
-            compiledFar = far;
         }
     }
 }
