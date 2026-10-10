@@ -17,6 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.creativemd.littletiles.common.tileentity.TileEntityLittleTiles;
 import com.creativemd.littletiles.common.utils.LittleTile;
+import com.creativemd.littletiles.common.utils.LittleTileBlock;
+import com.creativemd.littletiles.common.utils.LittleTileBlockColored;
 import com.creativemd.littletiles.common.utils.LittleTilesCubeObject;
 import com.xt9y.littletilesperf.CacheKey;
 import com.xt9y.littletilesperf.ClientLodManager;
@@ -85,7 +87,18 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
             CallbackInfoReturnable<ArrayList<LittleTilesCubeObject>> cir) {
         if (!PerfSettings.mergeOpaqueMicrotiles || !customRenderingTiles.isEmpty()) return;
         ArrayList<LittleTilesCubeObject> source = cir.getReturnValue();
-        if (source != null) {
+        if (source != null && source.size() >= 16) {
+            // A LittleTileTileEntity (or third-party LittleTile subtype) can
+            // have special lighting or rendering despite looking like a box.
+            // Reject mixed special-content tile entities before voxelizing.
+            List<LittleTile> tiles = getTiles();
+            synchronized (tiles) {
+                for (LittleTile tile : tiles) {
+                    Class<?> type = tile.getClass();
+                    if (type != LittleTileBlock.class && type != LittleTileBlockColored.class
+                        || tile.isStructureBlock) return;
+                }
+            }
             boolean distant = ClientLodManager.INSTANCE.wantsDistantMesh((TileEntityLittleTiles) (Object) this);
             cir.setReturnValue(MergedCubeRenderer.merge(source, distant));
         }
