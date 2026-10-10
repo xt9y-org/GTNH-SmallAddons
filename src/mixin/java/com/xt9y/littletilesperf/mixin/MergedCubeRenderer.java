@@ -26,7 +26,8 @@ final class MergedCubeRenderer {
 
     private MergedCubeRenderer() {}
 
-    static ArrayList<LittleTilesCubeObject> merge(ArrayList<LittleTilesCubeObject> original) {
+    static ArrayList<LittleTilesCubeObject> merge(
+            ArrayList<LittleTilesCubeObject> original, boolean distant) {
         if (original == null || original.size() < MIN_CANDIDATES) return original;
 
         int candidates = 0;
@@ -69,7 +70,8 @@ final class MergedCubeRenderer {
             }
         }
 
-        List<Box> merged = DenseGridMesher.mesh(cells);
+        List<Box> merged = DenseGridMesher.mesh(
+            distant ? DenseGridMesher.simplifyDistantInterior(cells, reserved) : cells);
         if (merged.size() >= candidates) return original;
 
         ArrayList<LittleTilesCubeObject> output =
