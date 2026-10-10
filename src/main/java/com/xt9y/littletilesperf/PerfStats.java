@@ -9,8 +9,17 @@ public final class PerfStats {
     private static final LongAdder INVALIDATIONS = new LongAdder();
     private static final LongAdder DUPLICATE_RENDERS_SKIPPED = new LongAdder();
     private static final LongAdder SCANNED_TILES = new LongAdder();
+    private static final LongAdder MERGED_INPUT = new LongAdder();
+    private static final LongAdder MERGED_OUTPUT = new LongAdder();
 
     private PerfStats() {}
+
+    public static void merged(int before, int after) {
+        if (PerfSettings.collectStatistics) {
+            MERGED_INPUT.add(before);
+            MERGED_OUTPUT.add(after);
+        }
+    }
 
     public static void hit() {
         if (PerfSettings.collectStatistics) HITS.increment();
@@ -36,6 +45,7 @@ public final class PerfStats {
             + " invalidations=" + INVALIDATIONS.sum()
             + " microtiles scanned on misses=" + SCANNED_TILES.sum()
             + " duplicate invalidations avoided=" + DUPLICATE_RENDERS_SKIPPED.sum()
+            + " merged cubes " + MERGED_INPUT.sum() + " -> " + MERGED_OUTPUT.sum()
             + " statistics=" + (PerfSettings.collectStatistics ? "on" : "off");
     }
 
@@ -45,5 +55,7 @@ public final class PerfStats {
         INVALIDATIONS.reset();
         DUPLICATE_RENDERS_SKIPPED.reset();
         SCANNED_TILES.reset();
+        MERGED_INPUT.reset();
+        MERGED_OUTPUT.reset();
     }
 }
