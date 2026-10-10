@@ -12,8 +12,13 @@ public final class PerfStats {
     private static final LongAdder MERGED_INPUT = new LongAdder();
     private static final LongAdder MERGED_OUTPUT = new LongAdder();
     private static final LongAdder HIDDEN_OPAQUE_FACES = new LongAdder();
+    private static final LongAdder MESH_CACHE_HITS = new LongAdder();
 
     private PerfStats() {}
+
+    public static void meshCacheHit() {
+        if (PerfSettings.collectStatistics) MESH_CACHE_HITS.increment();
+    }
 
     public static void hiddenOpaqueFaces(int count) {
         if (PerfSettings.collectStatistics && count > 0) HIDDEN_OPAQUE_FACES.add(count);
@@ -52,6 +57,7 @@ public final class PerfStats {
             + " duplicate invalidations avoided=" + DUPLICATE_RENDERS_SKIPPED.sum()
             + " merged cubes " + MERGED_INPUT.sum() + " -> " + MERGED_OUTPUT.sum()
             + " buried opaque faces skipped=" + HIDDEN_OPAQUE_FACES.sum()
+            + " mesh cache hits=" + MESH_CACHE_HITS.sum()
             + " statistics=" + (PerfSettings.collectStatistics ? "on" : "off");
     }
 
@@ -64,5 +70,6 @@ public final class PerfStats {
         MERGED_INPUT.reset();
         MERGED_OUTPUT.reset();
         HIDDEN_OPAQUE_FACES.reset();
+        MESH_CACHE_HITS.reset();
     }
 }
