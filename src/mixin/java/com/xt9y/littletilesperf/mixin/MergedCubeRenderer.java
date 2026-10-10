@@ -31,17 +31,15 @@ final class MergedCubeRenderer {
         if (original == null || original.size() < MIN_CANDIDATES) return original;
 
         int candidates = 0;
-        boolean[] reserved = new boolean[DenseGridMesher.VOLUME];
-        // Reserve occupied cell volumes for all non-mergeable shapes; this
-        // conservatively rejects overlapping cutout geometry too.
-        for (LittleTilesCubeObject c : original) {
-            if (eligible(c)) {
-                candidates++;
-            } else if (c != null) {
-                reserve(reserved, c);
-            }
-        }
+        for (LittleTilesCubeObject c : original) if (eligible(c)) candidates++;
         if (candidates < MIN_CANDIDATES) return original;
+
+        boolean[] reserved = new boolean[DenseGridMesher.VOLUME];
+        // Skip allocation and protective voxelization entirely for small
+        // or translucent-only groups. Only large compatible solid sets enter.
+        for (LittleTilesCubeObject c : original) {
+            if (c != null && !eligible(c)) reserve(reserved, c);
+        }
 
         int[] cells = new int[DenseGridMesher.VOLUME];
         Map<Material, Integer> materialIds = new HashMap<Material, Integer>();
