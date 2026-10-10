@@ -44,6 +44,9 @@ public final class PerfCommand extends CommandBase {
         }
         sender.addChatMessage(new ChatComponentText(
             "[LittleTilesPerf] merge=" + PerfSettings.mergeOpaqueMicrotiles
+                + " opaqueFaces=" + PerfSettings.cullBuriedOpaqueFaces
+                + " meshCache=" + PerfSettings.cacheOpaqueRenderCubes
+                + " distanceLOD=" + PerfSettings.distantLod
                 + " spatial=" + PerfSettings.spatialFaceCulling
                 + " boundsCache=" + PerfSettings.cacheStaticRenderBounds
                 + " deduplicate=" + PerfSettings.skipDuplicateRenderInvalidation));
