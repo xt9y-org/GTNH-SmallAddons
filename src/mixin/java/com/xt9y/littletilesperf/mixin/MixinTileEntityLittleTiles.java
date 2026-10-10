@@ -25,6 +25,7 @@ import com.xt9y.littletilesperf.ClientLodManager;
 import com.xt9y.littletilesperf.PerfSettings;
 import com.xt9y.littletilesperf.PerfStats;
 import com.xt9y.littletilesperf.RenderSnapshot;
+import com.xt9y.littletilesperf.RenderCubeSnapshot;
 
 /**
  * LittleTiles 1.7.10 integration. Cache only render metadata, never world tile contents
@@ -44,6 +45,9 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
 
     @Unique
     private volatile RenderSnapshot ltperf$snapshot;
+
+    @Unique
+    private volatile RenderCubeSnapshot ltperf$cubeSnapshot;
 
     /** Never cache across edits, NBT reloads or neighbor-triggered render invalidations. */
     @Inject(method = "updateTiles(Z)V", at = @At("RETURN"), remap = false)
@@ -75,7 +79,27 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
     private void ltperf$invalidate() {
         ltperf$revision++;
         ltperf$snapshot = null;
+        ltperf$cubeSnapshot = null;
         PerfStats.invalidated();
+    }
+
+    // Return previously reduced static descriptors when the tile entity has
+    // not changed. Only fully opaque basic boxes are retained, never cut
+    // geometry with per-tile generation tracking.
+    @Inject(method = "getRenderingCubes()Ljava/util/ArrayList;",
+        at = @At("HEAD"), cancellable = true, remap = false)
+    private void ltperf$cachedChunkGeometry(
+            CallbackInfoReturnable<ArrayList<LittleTilesCubeObject>> cir) {
+        if (!PerfSettings.mergeOpaqueMicrotiles || !PerfSettings.cacheOpaqueRenderCubes
+            || !customRenderingTiles.isEmpty()) return;
+        RenderCubeSnapshot cache = ltperf$cubeSnapshot;
+        if (cache == null || cache.revision != ltperf$revision
+            || cache.x != xCoord || cache.y != yCoord || cache.z != zCoord) return;
+        boolean distant = PerfSettings.distantLod
+            && ClientLodManager.INSTANCE.wantsDistantMesh((TileEntityLittleTiles) (Object) this);
+        if (cache.distant != distant) return;
+        PerfStats.meshCacheHit();
+        cir.setReturnValue(cache.copy());
     }
 
     // Called by the existing LittleTiles ISBRH on Angelica's chunk-builder
@@ -99,9 +123,27 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
                         || tile.isStructureBlock) return;
                 }
             }
-            boolean distant = ClientLodManager.INSTANCE.wantsDistantMesh((TileEntityLittleTiles) (Object) this);
-            cir.setReturnValue(MergedCubeRenderer.merge(source, distant));
+            boolean distant = PerfSettings.distantLod
+                && ClientLodManager.INSTANCE.wantsDistantMesh((TileEntityLittleTiles) (Object) this);
+            long before = ltperf$revision;
+            ArrayList<LittleTilesCubeObject> reduced = MergedCubeRenderer.merge(source, distant);
+            if (reduced != source && PerfSettings.cacheOpaqueRenderCubes && before == ltperf$revision
+                && ltperf$allOpaqueStandard(reduced)) {
+                ltperf$cubeSnapshot = new RenderCubeSnapshot(
+                    before, xCoord, yCoord, zCoord, distant, reduced);
+            }
+            cir.setReturnValue(reduced);
         }
+    }
+
+    @Unique
+    private boolean ltperf$allOpaqueStandard(List<LittleTilesCubeObject> cubes) {
+        for (LittleTilesCubeObject cube : cubes) {
+            if (cube.block == null || !cube.block.isOpaqueCube()
+                || cube.block.getRenderType() != 0 || cube.meta < 0
+                || cube.cutoutInfo != null) return false;
+        }
+        return true;
     }
 
     @Inject(method = "getRenderBoundingBox()Lnet/minecraft/util/AxisAlignedBB;",
