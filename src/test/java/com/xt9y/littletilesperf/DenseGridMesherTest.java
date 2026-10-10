@@ -59,6 +59,46 @@ class DenseGridMesherTest {
     }
 
     @Test
+    void farLodFillsOnlySingleVoxelInteriorCavities() {
+        int[] cells = new int[DenseGridMesher.VOLUME];
+        boolean[] reserved = new boolean[cells.length];
+        // A complete 2x2x2 material cluster except for one missing interior cell.
+        for (int y = 4; y < 6; y++)
+            for (int z = 4; z < 6; z++)
+                for (int x = 4; x < 6; x++)
+                    cells[DenseGridMesher.index(x, y, z)] = 3;
+        cells[DenseGridMesher.index(4, 4, 4)] = 0;
+        int[] output = DenseGridMesher.simplifyDistantInterior(cells, reserved);
+        assertEquals(3, output[DenseGridMesher.index(4, 4, 4)]);
+        assertEquals(0, cells[DenseGridMesher.index(4, 4, 4)]);
+    }
+
+    @Test
+    void farLodPreservesBoundariesMixedMaterialsAndCutouts() {
+        int[] cells = new int[DenseGridMesher.VOLUME];
+        boolean[] reserved = new boolean[cells.length];
+        for (int y = 0; y < 2; y++)
+            for (int z = 0; z < 2; z++)
+                for (int x = 0; x < 2; x++)
+                    cells[DenseGridMesher.index(x, y, z)] = 2;
+        cells[DenseGridMesher.index(0, 0, 0)] = 0; // block boundary must stay exact
+
+        for (int y = 6; y < 8; y++)
+            for (int z = 6; z < 8; z++)
+                for (int x = 6; x < 8; x++)
+                    cells[DenseGridMesher.index(x, y, z)] = 8;
+        cells[DenseGridMesher.index(7, 7, 7)] = 9; // mixed colors must stay exact
+        cells[DenseGridMesher.index(6, 6, 6)] = 0;
+
+        int[] before = cells.clone();
+        assertArrayEquals(before, DenseGridMesher.simplifyDistantInterior(cells, reserved));
+
+        cells[DenseGridMesher.index(7, 7, 7)] = 8;
+        reserved[DenseGridMesher.index(7, 7, 7)] = true;
+        assertArrayEquals(cells, DenseGridMesher.simplifyDistantInterior(cells, reserved));
+    }
+
+    @Test
     void rejectsInvalidGrid() {
         assertThrows(IllegalArgumentException.class, () -> DenseGridMesher.mesh(new int[5]));
     }
