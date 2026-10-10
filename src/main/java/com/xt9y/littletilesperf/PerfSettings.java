@@ -11,6 +11,7 @@ import net.minecraftforge.common.config.Configuration;
 public final class PerfSettings {
 
     public static volatile boolean cacheStaticRenderBounds = true;
+    public static volatile boolean spatialFaceCulling = true;
     public static volatile boolean skipDuplicateRenderInvalidation = true;
     public static volatile boolean collectStatistics = false;
 
@@ -19,6 +20,9 @@ public final class PerfSettings {
     public static void load(File file) {
         Configuration cfg = new Configuration(file);
         cfg.load();
+        spatialFaceCulling = cfg.getBoolean(
+            "spatialFaceCulling", "rendering", true,
+            "Use grid-indexed face coverage for blocks with at least 64 LittleTiles.");
         cacheStaticRenderBounds = cfg.getBoolean(
             "cacheStaticRenderBounds", "rendering", true,
             "Cache static LittleTiles render bounds and maximum render distance per tile entity.");
