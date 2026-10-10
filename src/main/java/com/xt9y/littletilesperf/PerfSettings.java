@@ -11,6 +11,7 @@ import net.minecraftforge.common.config.Configuration;
 public final class PerfSettings {
 
     public static volatile boolean cacheStaticRenderBounds = true;
+    public static volatile boolean mergeOpaqueMicrotiles = true;
     public static volatile boolean spatialFaceCulling = true;
     public static volatile boolean skipDuplicateRenderInvalidation = true;
     public static volatile boolean collectStatistics = false;
@@ -23,6 +24,9 @@ public final class PerfSettings {
         spatialFaceCulling = cfg.getBoolean(
             "spatialFaceCulling", "rendering", true,
             "Use grid-indexed face coverage for blocks with at least 64 LittleTiles.");
+        mergeOpaqueMicrotiles = cfg.getBoolean(
+            "mergeOpaqueMicrotiles", "rendering", true,
+            "Exactly coalesce fully opaque standard cuboids with identical block/meta/color before Angelica meshing.");
         cacheStaticRenderBounds = cfg.getBoolean(
             "cacheStaticRenderBounds", "rendering", true,
             "Cache static LittleTiles render bounds and maximum render distance per tile entity.");
