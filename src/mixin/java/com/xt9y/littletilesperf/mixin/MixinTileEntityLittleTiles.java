@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.creativemd.littletiles.common.tileentity.TileEntityLittleTiles;
 import com.creativemd.littletiles.common.utils.LittleTile;
+import com.creativemd.littletiles.common.utils.LittleTilesCubeObject;
 import com.xt9y.littletilesperf.CacheKey;
 import com.xt9y.littletilesperf.PerfSettings;
 import com.xt9y.littletilesperf.PerfStats;
@@ -67,6 +68,18 @@ public abstract class MixinTileEntityLittleTiles extends TileEntity {
         ltperf$revision++;
         ltperf$snapshot = null;
         PerfStats.invalidated();
+    }
+
+    // Called by the existing LittleTiles ISBRH on Angelica's chunk-builder
+    // threads. Reduced descriptors are passed to the same renderer, so its
+    // VBO, render passes, shaders, lighting and chunk uploads stay unchanged.
+    @Inject(method = "getRenderingCubes()Ljava/util/ArrayList;",
+        at = @At("RETURN"), cancellable = true, remap = false)
+    private void ltperf$mergeChunkGeometry(
+            CallbackInfoReturnable<ArrayList<LittleTilesCubeObject>> cir) {
+        if (!PerfSettings.mergeOpaqueMicrotiles || !customRenderingTiles.isEmpty()) return;
+        ArrayList<LittleTilesCubeObject> source = cir.getReturnValue();
+        if (source != null) cir.setReturnValue(MergedCubeRenderer.merge(source));
     }
 
     @Inject(method = "getRenderBoundingBox()Lnet/minecraft/util/AxisAlignedBB;",
