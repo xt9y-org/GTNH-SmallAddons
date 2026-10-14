@@ -10,3 +10,26 @@ jobs:
   build-and-test:
     uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/build-and-test.yml@master
     secrets: inherit
+
+  publish-wildcard-test:
+    needs: build-and-test
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master' &&
+      startsWith(github.event.head_commit.message, 'release: wildcard interface controls v1.2.1')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create v1.2.1 tag from tested commit
+        run: |
+          git tag v1.2.1 "$GITHUB_SHA"
+          git push origin v1.2.1
+      - name: Dispatch tagged JAR release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.1"
