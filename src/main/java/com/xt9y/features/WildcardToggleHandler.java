@@ -27,7 +27,8 @@ public class WildcardToggleHandler {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerInteract(PlayerInteractEvent event) {
         if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || event.world.isRemote
-            || !event.entityPlayer.isSneaking() || !isSoftMallet(event.entityPlayer.getHeldItem())) {
+            || !event.entityPlayer.isSneaking()
+            || !isSoftMallet(event.entityPlayer.getHeldItem())) {
             return;
         }
 
