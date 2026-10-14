@@ -17,7 +17,8 @@ toggle --> wildcard button or sneak + right-click Soft Mallet
 
 AE2 Interface Wildcard Patterns
 pattern --> same wildcard expansion for AE2 Interfaces
-toggle --> sneak + right-click Soft Mallet
+toggle --> left-side button in the AE2 item-pattern Interface GUI, or sneak + right-click Soft Mallet
+applies --> full-block and cable-part Interfaces, including AE2FC Dual Interfaces
 
 CRIB Non-Consumable Inputs
 NC --> reserved reusable processing-pattern catalyst

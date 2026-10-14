@@ -60,6 +60,8 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
         if (xt9y$enableWildcardExpansion != enabled) {
             XT9YFeatures.LOGGER.info("Interface wildcard pattern expansion {}", enabled);
             xt9y$enableWildcardExpansion = enabled;
+            iHost.saveChanges();
+            ((DualityInterface) (Object) this).updateCraftingList();
         }
     }
 

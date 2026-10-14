@@ -3,3 +3,5 @@ GT5U.infodata.hatch.crafting_input_me.wildcard.enable=§aWildcard Pattern Expans
 GT5U.infodata.hatch.crafting_input_me.wildcard.disabled=§cWildcard Pattern Expansion
 ggfab.wildcard.toggle=Wildcard expansion: %s
 xt9yfeatures.tooltip.wildcard.mallet=Sneak + soft mallet toggles wildcard pattern expansion
+xt9yfeatures.gui.wildcard=Wildcard Pattern Expansion
+xt9yfeatures.gui.wildcard.hint=Toggle same-material processing pattern variants (Soft Mallet + sneak also works)
