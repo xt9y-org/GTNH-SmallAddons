@@ -15,7 +15,9 @@
     "MixinDualityInterface",
     "MixinTileInterface",
     "MixinCraftingCPUClusterXTProfile",
-    "MixinDualityInterfaceXTProfile"
+    "MixinDualityInterfaceXTProfile",
+    "MixinContainerInterfaceWildcard",
+    "MixinPacketValueConfigWildcard"
   ],
   "client": [
     "MixinGregTech5RecipeProcessorNonConsumable",
@@ -23,7 +25,8 @@
     "MixinVirtualMEPhantomSlotNonConsumable",
     "MixinVirtualMESlotNonConsumable",
     "MixinGuiCraftingCPUXTProfile",
-    "MixinBetterLoadingScreenXTProfile"
+    "MixinBetterLoadingScreenXTProfile",
+    "MixinGuiInterfaceWildcard"
   ],
   "server": []
 }
