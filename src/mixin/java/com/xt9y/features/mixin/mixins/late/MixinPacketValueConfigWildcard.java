@@ -32,8 +32,7 @@ public abstract class MixinPacketValueConfigWildcard {
         ci.cancel();
 
         // Only permit a toggle for the interface whose valid GUI this player actually opened.
-        if (!(player.openContainer instanceof ContainerInterface container)
-            || !container.canInteractWith(player)
+        if (!(player.openContainer instanceof ContainerInterface container) || !container.canInteractWith(player)
             || !container.isValidContainer()
             || !(container.getTarget() instanceof IInterfaceHost host)) {
             return;
