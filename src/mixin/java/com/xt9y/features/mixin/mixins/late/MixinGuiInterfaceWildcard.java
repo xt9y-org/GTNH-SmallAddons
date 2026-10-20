@@ -40,8 +40,10 @@ public abstract class MixinGuiInterfaceWildcard extends GuiUpgradeable {
         for (; y < guiTop + 170; y += 18) {
             boolean occupied = false;
             for (Object entry : buttonList) {
-                if (entry instanceof GuiButton button && button.visible && button.xPosition < x + 16
-                    && button.xPosition + button.width > x && button.yPosition < y + 16
+                if (entry instanceof GuiButton button && button.visible
+                    && button.xPosition < x + 16
+                    && button.xPosition + button.width > x
+                    && button.yPosition < y + 16
                     && button.yPosition + button.height > y) {
                     occupied = true;
                     break;
