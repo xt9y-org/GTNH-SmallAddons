@@ -3,6 +3,7 @@ package com.xt9y.features.mixin.mixins.late;
 import java.io.IOException;
 
 import net.minecraft.client.gui.GuiButton;
+import net.minecraft.util.StatCollector;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -32,14 +33,29 @@ public abstract class MixinGuiInterfaceWildcard extends GuiUpgradeable {
 
     @Inject(method = "addButtons", at = @At("TAIL"))
     private void xt9y$addWildcardButton(CallbackInfo ci) {
-        // Second left-side column avoids AE2FC's additional sideless-mode control.
+        // Reuse the standard left-side column. Find the first unoccupied row so
+        // optional AE2/AE2FC controls can keep their existing positions.
+        int x = guiLeft - 18;
+        int y = guiTop + 98;
+        for (; y < guiTop + 170; y += 18) {
+            boolean occupied = false;
+            for (Object entry : buttonList) {
+                if (entry instanceof GuiButton button && button.visible && button.xPosition < x + 16
+                    && button.xPosition + button.width > x && button.yPosition < y + 16
+                    && button.yPosition + button.height > y) {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (!occupied) break;
+        }
         xt9y$wildcardButton = new GuiToggleButton(
-            guiLeft - 36,
-            guiTop + 170,
+            x,
+            y,
             178,
             194,
-            "xt9yfeatures.gui.wildcard",
-            "xt9yfeatures.gui.wildcard.hint");
+            StatCollector.translateToLocal("xt9yfeatures.gui.wildcard"),
+            StatCollector.translateToLocal("xt9yfeatures.gui.wildcard.hint"));
         buttonList.add(xt9y$wildcardButton);
     }
 
