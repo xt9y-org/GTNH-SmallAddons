@@ -1,5 +1,7 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import net.minecraft.entity.player.EntityPlayer;
+
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -8,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.WildcardToggleHandler;
 import com.xt9y.features.api.IWildcardContainerState;
 import com.xt9y.features.api.IWildcardToggleable;
 
@@ -35,5 +38,10 @@ public abstract class MixinContainerInterfaceWildcard implements IWildcardContai
     @Override
     public boolean xt9y$isWildcardEnabled() {
         return xt9y$wildcardEnabled;
+    }
+
+    @Override
+    public void xt9y$toggleWildcard(EntityPlayer player) {
+        WildcardToggleHandler.toggleWildcard(player, (IWildcardToggleable) myDuality);
     }
 }
