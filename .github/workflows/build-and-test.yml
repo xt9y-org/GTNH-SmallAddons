@@ -11,12 +11,27 @@ jobs:
     uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/build-and-test.yml@master
     secrets: inherit
 
-  publish-wildcard-fluid-fix:
-    needs: build-and-test
+  validate-mixin-method-names:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prevent invalid @Implements redirect names
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          source = Path("src/mixin/java/com/xt9y/features/mixin/mixins/late/MixinDualityInterface.java").read_text()
+          prefixed_methods = set(re.findall(r"\\b(?:public|private|protected)\\s+\\w+\\s+(xt9y\\$\\w+)\\s*\\(", source))
+          allowed = {"xt9y$isWildcardEnabled", "xt9y$setWildcardEnabled"}
+          assert prefixed_methods == allowed, f"Unexpected @Implements prefix on method: {prefixed_methods ^ allowed}"
+          PY
+
+  publish-mixin-hotfix:
+    needs: [build-and-test, validate-mixin-method-names]
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/master' &&
-      startsWith(github.event.head_commit.message, 'release: wildcard interface controls v1.2.3')
+      startsWith(github.event.head_commit.message, 'release: wildcard interface controls v1.2.4')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -25,11 +40,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Create v1.2.3 tag from tested commit
+      - name: Create v1.2.4 tag from tested commit
         run: |
-          git tag v1.2.3 "$GITHUB_SHA"
-          git push origin v1.2.3
+          git tag v1.2.4 "$GITHUB_SHA"
+          git push origin v1.2.4
       - name: Dispatch tagged JAR release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.3"
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.4"
