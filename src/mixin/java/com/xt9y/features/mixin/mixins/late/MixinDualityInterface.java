@@ -102,7 +102,8 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
     @Redirect(
         method = "pushPattern",
         at = @At(value = "INVOKE", target = "Ljava/util/List;contains(Ljava/lang/Object;)Z"))
-    private boolean xt9y$acceptExpandedPattern(List<ICraftingPatternDetails> registered, Object pattern) {
+    // Redirect handlers must not use the xt9y$ soft-implements prefix.
+    private boolean acceptExpandedPattern(List<ICraftingPatternDetails> registered, Object pattern) {
         // Only bypass AE2's membership check. The expanded pattern and its actual
         // crafting table must reach the target machine unchanged.
         return registered.contains(pattern)
