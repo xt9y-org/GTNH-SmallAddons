@@ -1,7 +1,6 @@
 package com.xt9y.features;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -12,6 +11,7 @@ import appeng.api.AEApi;
 import appeng.api.networking.crafting.ICraftingPatternDetails;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IAEStack;
+import appeng.helpers.PatternHelper;
 import gregtech.api.enums.Materials;
 import gregtech.api.enums.OrePrefixes;
 import gregtech.api.enums.OrePrefixes.ParsedOreDictName;
@@ -133,10 +133,10 @@ public class WildcardPatternHelper {
             if (sameItemMismatch) continue;
 
             WildcardPatternDetails expandedDetail = new WildcardPatternDetails(
+                originalPattern,
                 patternStack,
                 resolvedInputs,
-                resolvedOutputs,
-                originalPattern.isCraftable());
+                resolvedOutputs);
             result.add(expandedDetail);
         }
 
@@ -182,17 +182,19 @@ public class WildcardPatternHelper {
 
     public static class WildcardPatternDetails implements ICraftingPatternDetails {
 
+        private final ICraftingPatternDetails originalPattern;
         private final ItemStack pattern;
         private final IAEStack<?>[] inputs;
         private final IAEStack<?>[] outputs;
-        private final boolean craftable;
+        private int priority;
 
-        public WildcardPatternDetails(ItemStack pattern, IAEStack<?>[] inputs, IAEStack<?>[] outputs,
-            boolean craftable) {
+        public WildcardPatternDetails(ICraftingPatternDetails originalPattern, ItemStack pattern,
+            IAEStack<?>[] inputs, IAEStack<?>[] outputs) {
+            this.originalPattern = originalPattern;
             this.pattern = pattern;
             this.inputs = copyAEStackArray(inputs);
             this.outputs = copyAEStackArray(outputs);
-            this.craftable = craftable;
+            this.priority = originalPattern.getPriority();
         }
 
         private static IAEStack<?>[] copyAEStackArray(IAEStack<?>[] src) {
@@ -219,17 +221,20 @@ public class WildcardPatternHelper {
 
         @Override
         public boolean isCraftable() {
-            return craftable;
+            return originalPattern.isCraftable();
         }
 
         @Override
         public IAEItemStack[] getInputs() {
+            // Fluid patterns expose packet-form legacy inputs to item-only AE2 callers.
+            // Preserve those entries while modern callers use getAEInputs().
+            IAEItemStack[] legacy = originalPattern.getInputs();
             IAEItemStack[] result = new IAEItemStack[inputs.length];
             for (int i = 0; i < inputs.length; i++) {
                 if (inputs[i] instanceof IAEItemStack ae) {
                     result[i] = ae;
-                } else {
-                    result[i] = null;
+                } else if (i < legacy.length) {
+                    result[i] = legacy[i];
                 }
             }
             return result;
@@ -237,43 +242,34 @@ public class WildcardPatternHelper {
 
         @Override
         public IAEItemStack[] getCondensedInputs() {
-            return condense(getInputs());
+            return PatternHelper.convertToCondensedList(getInputs());
         }
 
         @Override
         public IAEItemStack[] getCondensedOutputs() {
-            return condense(getOutputs());
+            return PatternHelper.convertToCondensedList(getOutputs());
         }
 
-        private static IAEItemStack[] condense(IAEItemStack[] items) {
-            LinkedHashMap<Integer, IAEItemStack> map = new LinkedHashMap<>();
-            for (IAEItemStack stack : items) {
-                if (stack == null) continue;
-                ItemStack is = stack.getItemStack();
-                int key = is.getItem()
-                    .hashCode() * 31 + is.getItemDamage();
-                IAEItemStack existing = map.get(key);
-                if (existing != null) {
-                    map.put(
-                        key,
-                        existing.copy()
-                            .setStackSize(existing.getStackSize() + stack.getStackSize()));
-                } else {
-                    map.put(key, stack);
-                }
-            }
-            return map.values()
-                .toArray(new IAEItemStack[0]);
+        @Override
+        public IAEStack<?>[] getCondensedAEInputs() {
+            // AE2FC crafting requires fluids to remain present in the condensed arrays.
+            return PatternHelper.convertToCondensedAEList(inputs);
+        }
+
+        @Override
+        public IAEStack<?>[] getCondensedAEOutputs() {
+            return PatternHelper.convertToCondensedAEList(outputs);
         }
 
         @Override
         public IAEItemStack[] getOutputs() {
+            IAEItemStack[] legacy = originalPattern.getOutputs();
             IAEItemStack[] result = new IAEItemStack[outputs.length];
             for (int i = 0; i < outputs.length; i++) {
                 if (outputs[i] instanceof IAEItemStack ae) {
                     result[i] = ae;
-                } else {
-                    result[i] = null;
+                } else if (i < legacy.length) {
+                    result[i] = legacy[i];
                 }
             }
             return result;
@@ -281,7 +277,12 @@ public class WildcardPatternHelper {
 
         @Override
         public boolean canSubstitute() {
-            return false;
+            return originalPattern.canSubstitute();
+        }
+
+        @Override
+        public boolean canBeSubstitute() {
+            return originalPattern.canBeSubstitute();
         }
 
         @Override
@@ -294,11 +295,13 @@ public class WildcardPatternHelper {
 
         @Override
         public int getPriority() {
-            return 0;
+            return priority;
         }
 
         @Override
-        public void setPriority(int priority) {}
+        public void setPriority(int priority) {
+            this.priority = priority;
+        }
 
         @Override
         public IAEStack<?>[] getAEInputs() {
