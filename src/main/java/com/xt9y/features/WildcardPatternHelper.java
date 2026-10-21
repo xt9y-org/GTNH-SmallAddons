@@ -188,8 +188,8 @@ public class WildcardPatternHelper {
         private final IAEStack<?>[] outputs;
         private int priority;
 
-        public WildcardPatternDetails(ICraftingPatternDetails originalPattern, ItemStack pattern,
-            IAEStack<?>[] inputs, IAEStack<?>[] outputs) {
+        public WildcardPatternDetails(ICraftingPatternDetails originalPattern, ItemStack pattern, IAEStack<?>[] inputs,
+            IAEStack<?>[] outputs) {
             this.originalPattern = originalPattern;
             this.pattern = pattern;
             this.inputs = copyAEStackArray(inputs);
