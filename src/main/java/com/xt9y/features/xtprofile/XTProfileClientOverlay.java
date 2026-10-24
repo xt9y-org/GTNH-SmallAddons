@@ -30,7 +30,7 @@ import appeng.client.gui.widgets.GuiAeButton;
 import appeng.client.gui.widgets.GuiScrollbar;
 import appeng.client.gui.widgets.MEGuiTextField;
 import appeng.client.render.highlighter.BlockPosHighlighter;
-import appeng.core.localization.GuiColors;
+import appeng.core.localization.ColorUtils;
 import appeng.core.localization.PlayerMessages;
 import codechicken.nei.VisiblityData;
 import codechicken.nei.api.API;
@@ -201,7 +201,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
             XTProfilePanelData.View view = currentView(message);
             if (view == null) {
                 configureScrollbar(0);
-                drawCentered("Waiting for route data...", panelTop + 110, GuiColors.CraftingStatusCPUName.getColor());
+                drawCentered("Waiting for route data...", panelTop + 110, ColorUtils.craftingStatusCPUName.getColor());
                 return;
             }
 
@@ -371,7 +371,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         cpuButton.drawButton(mc, mouseX, mouseY);
         allButton.drawButton(mc, mouseX, mouseY);
 
-        int color = GuiColors.CraftingStatusCPUStorage.getColor();
+        int color = ColorUtils.craftingStatusCPUStorage.getColor();
         drawRight(mc, "Time", panelLeft + HEADER_TIME_RIGHT, panelTop + 6, color);
         drawRight(mc, "TPS", panelLeft + HEADER_TPS_RIGHT, panelTop + 6, color);
     }
@@ -387,7 +387,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 searchField.x + 3,
                 searchField.y + 5,
                 0.75F,
-                GuiColors.CraftingStatusCPUStorage.getColor());
+                ColorUtils.craftingStatusCPUStorage.getColor());
         }
     }
 
@@ -411,7 +411,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 panelLeft + SLOT_LEFT + 3,
                 y + 3,
                 0.8F,
-                GuiColors.CraftingStatusCPUName.getColor());
+                ColorUtils.craftingStatusCPUName.getColor());
 
             String machine = entry.machine == null || entry.machine.isEmpty() ? "" : fit(entry.machine, 115, mc);
             drawScaledString(
@@ -420,28 +420,28 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
                 panelLeft + SLOT_LEFT + 3,
                 y + 12,
                 0.65F,
-                GuiColors.CraftingStatusCPUStorage.getColor());
+                ColorUtils.craftingStatusCPUStorage.getColor());
             drawScaledRight(
                 mc,
                 craftTime(entry.craftTimeMillis),
                 panelLeft + ROW_TIME_RIGHT,
                 y + 12,
                 0.7F,
-                GuiColors.CraftingStatusCPUStorage.getColor());
+                ColorUtils.craftingStatusCPUStorage.getColor());
             drawScaledRight(
                 mc,
                 tpsUsage(entry.tpsUsagePercent),
                 panelLeft + ROW_TPS_RIGHT,
                 y + 12,
                 0.7F,
-                GuiColors.CraftingStatusCPUStorage.getColor());
+                ColorUtils.craftingStatusCPUStorage.getColor());
         }
 
         if (entries.isEmpty()) {
             String search = searchField == null ? "" : searchField.getText();
             String empty = search.isEmpty() ? (sessionScope ? "No session routes yet" : "No routes for this CPU yet")
                 : "No matching routes";
-            drawCentered(empty, panelTop + DATA_TOP + 5, GuiColors.CraftingStatusCPUName.getColor());
+            drawCentered(empty, panelTop + DATA_TOP + 5, ColorUtils.craftingStatusCPUName.getColor());
         }
     }
 
