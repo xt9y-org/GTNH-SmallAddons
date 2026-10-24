@@ -38,12 +38,29 @@ jobs:
           fi
           grep -q 'Applied-Energistics-2-Unofficial:rv3-beta-1080-GTNH:dev' build.gradle.kts
 
-  publish-ae2-compat-fix:
-    needs: [build-and-test, validate-mixin-method-names, validate-ae2-compatibility]
+  validate-tooltip-layering:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify overlay draws before AE2 deferred tooltip
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src = Path('src/main/java/com/xt9y/features/xtprofile/XTProfileClientOverlay.java').read_text()
+          mixin = Path('src/mixin/java/com/xt9y/features/mixin/mixins/late/MixinAEBaseGuiXTProfile.java').read_text()
+          config = Path('src/main/resources/mixins.xt9yfeatures.json').read_text()
+          assert 'GuiScreenEvent.DrawScreenEvent.Post' not in src
+          assert 'renderBeforeTooltip' in src and 'renderBeforeTooltip' in mixin
+          assert 'AEBaseGui$AEGuiTooltip;draw()V' in mixin
+          assert 'MixinAEBaseGuiXTProfile' in config
+          PY
+
+  publish-tooltip-layering-fix:
+    needs: [build-and-test, validate-mixin-method-names, validate-ae2-compatibility, validate-tooltip-layering]
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/master' &&
-      startsWith(github.event.head_commit.message, 'release: XTProfile AE2 compatibility v1.2.5')
+      startsWith(github.event.head_commit.message, 'release: XTProfile tooltip layering v1.2.6')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -52,11 +69,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Create v1.2.5 tag from tested commit
+      - name: Create v1.2.6 tag from tested commit
         run: |
-          git tag v1.2.5 "$GITHUB_SHA"
-          git push origin v1.2.5
+          git tag v1.2.6 "$GITHUB_SHA"
+          git push origin v1.2.6
       - name: Dispatch tagged JAR release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.5"
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.6"

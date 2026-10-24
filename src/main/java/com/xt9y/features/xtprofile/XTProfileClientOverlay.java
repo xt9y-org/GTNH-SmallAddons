@@ -183,19 +183,20 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         event.setCanceled(true);
     }
 
-    @SubscribeEvent
-    public void onDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
-        if (!(event.gui instanceof GuiCraftingCPU) || !(event.gui instanceof AEBaseGui)) return;
+    // Render after AE2's GUI contents but before AE2's deferred item tooltip.
+    public static void renderBeforeTooltip(AEBaseGui gui, int mouseX, int mouseY) {
+        if (instance != null && gui instanceof GuiCraftingCPU) instance.drawPanel(gui, mouseX, mouseY);
+    }
 
-        AEBaseGui gui = (AEBaseGui) event.gui;
+    private void drawPanel(AEBaseGui gui, int mouseX, int mouseY) {
         XTProfilePanelMessage message = XTProfileClientState.current();
-        position(event.gui);
+        position(gui);
         createWidgets();
         layoutWidgets();
         beginPanelRender();
         try {
             drawNativeBackground(gui);
-            drawHeader(message, event.mouseX, event.mouseY);
+            drawHeader(message, mouseX, mouseY);
             drawSearch(gui);
 
             XTProfilePanelData.View view = currentView(message);
@@ -212,9 +213,9 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
             List<XTProfilePanelData.Entry> entries = filteredEntries(view);
             configureScrollbar(entries.size());
-            handlePointerInput(gui, event.mouseX, event.mouseY, entries.size());
+            handlePointerInput(gui, mouseX, mouseY, entries.size());
             configureScrollbar(entries.size());
-            hoveredRow = rowAt(event.mouseX, event.mouseY, entries.size());
+            hoveredRow = rowAt(mouseX, mouseY, entries.size());
             if (selectedEntry >= entries.size()) selectedEntry = -1;
             drawRows(gui, entries);
             scrollbar.draw(gui);
