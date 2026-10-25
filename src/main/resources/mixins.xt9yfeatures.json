@@ -25,7 +25,7 @@
     "MixinVirtualMEPhantomSlotNonConsumable",
     "MixinVirtualMESlotNonConsumable",
     "MixinGuiCraftingCPUXTProfile",
-    "MixinAEBaseGuiXTProfile",
+    "MixinAEGuiTooltipXTProfile",
     "MixinBetterLoadingScreenXTProfile",
     "MixinGuiInterfaceWildcard"
   ],

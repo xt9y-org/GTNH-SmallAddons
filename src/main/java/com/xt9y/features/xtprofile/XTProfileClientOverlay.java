@@ -82,6 +82,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private int hoveredRow = -1;
     private int selectedEntry = -1;
     private boolean leftMouseDown;
+    private boolean renderedBeforeTooltip;
     private MEGuiTextField searchField;
     private GuiAeButton cpuButton;
     private GuiAeButton allButton;
@@ -123,6 +124,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         hoveredRow = -1;
         selectedEntry = -1;
         leftMouseDown = false;
+        renderedBeforeTooltip = false;
     }
 
     @SubscribeEvent
@@ -183,9 +185,19 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         event.setCanceled(true);
     }
 
-    // Render after AE2's GUI contents but before AE2's deferred item tooltip.
+    // Render after the AE2 GUI contents but before its deferred item tooltip.
     public static void renderBeforeTooltip(AEBaseGui gui, int mouseX, int mouseY) {
-        if (instance != null && gui instanceof GuiCraftingCPU) instance.drawPanel(gui, mouseX, mouseY);
+        if (instance == null || !(gui instanceof GuiCraftingCPU)) return;
+        instance.renderedBeforeTooltip = true;
+        instance.drawPanel(gui, mouseX, mouseY);
+    }
+
+    // Keep the panel visible if an AE2 update changes the tooltip rendering hook.
+    @SubscribeEvent
+    public void onDraw(GuiScreenEvent.DrawScreenEvent.Post event) {
+        if (!(event.gui instanceof GuiCraftingCPU) || !(event.gui instanceof AEBaseGui)) return;
+        if (!renderedBeforeTooltip) drawPanel((AEBaseGui) event.gui, event.mouseX, event.mouseY);
+        renderedBeforeTooltip = false;
     }
 
     private void drawPanel(AEBaseGui gui, int mouseX, int mouseY) {
@@ -338,6 +350,10 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
     private static void beginPanelRender() {
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
+        // GUI/NEI clipping state can otherwise discard the side panel entirely.
+        GL11.glDisable(GL11.GL_SCISSOR_TEST);
+        GL11.glDisable(GL11.GL_STENCIL_TEST);
+        GL11.glColorMask(true, true, true, true);
         GL11.glDisable(GL11.GL_LIGHTING);
         GL11.glDisable(GL11.GL_DEPTH_TEST);
         GL11.glDisable(GL11.GL_CULL_FACE);
