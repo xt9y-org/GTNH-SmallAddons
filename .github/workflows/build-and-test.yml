@@ -81,3 +81,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.7"
+
+  publish-feature-config-v1-2-8:
+    needs: [build-and-test, validate-mixin-method-names, validate-ae2-compatibility, validate-tooltip-layering]
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/master' &&
+      startsWith(github.event.head_commit.message, 'release: feature config and GUI scaling v1.2.8')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create v1.2.8 tag from tested commit
+        run: |
+          git tag v1.2.8 "$GITHUB_SHA"
+          git push origin v1.2.8
+      - name: Dispatch tagged JAR release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/workflows/release-tags.yml/dispatches" -f ref="v1.2.8"
