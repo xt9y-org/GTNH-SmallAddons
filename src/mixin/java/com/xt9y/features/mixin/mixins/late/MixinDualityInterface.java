@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,10 +50,11 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
     private final Map<ICraftingPatternDetails, ICraftingPatternDetails> xt9y$expandedToOriginal = new HashMap<>();
 
     public boolean xt9y$isWildcardEnabled() {
-        return xt9y$enableWildcardExpansion;
+        return XT9YConfig.ae2InterfaceWildcard && xt9y$enableWildcardExpansion;
     }
 
     public void xt9y$setWildcardEnabled(boolean enabled) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         if (xt9y$enableWildcardExpansion != enabled) {
             XT9YFeatures.LOGGER.info("Interface wildcard pattern expansion {}", enabled);
             xt9y$enableWildcardExpansion = enabled;
@@ -77,7 +79,7 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
     @Inject(method = "provideCrafting", at = @At("RETURN"))
     private void onProvideCrafting(ICraftingProviderHelper craftingTracker, CallbackInfo ci) {
         xt9y$expandedToOriginal.clear();
-        if (!gridProxy.isActive() || !xt9y$enableWildcardExpansion || craftingList == null) return;
+        if (!XT9YConfig.ae2InterfaceWildcard || !gridProxy.isActive() || !xt9y$enableWildcardExpansion || craftingList == null) return;
 
         World world = iHost.getTileEntity()
             .getWorldObj();
@@ -107,6 +109,7 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
         // Only bypass AE2's membership check. The expanded pattern and its actual
         // crafting table must reach the target machine unchanged.
         return registered.contains(pattern)
-            || (xt9y$enableWildcardExpansion && xt9y$expandedToOriginal.containsKey(pattern));
+            || (XT9YConfig.ae2InterfaceWildcard && xt9y$enableWildcardExpansion
+                && xt9y$expandedToOriginal.containsKey(pattern));
     }
 }

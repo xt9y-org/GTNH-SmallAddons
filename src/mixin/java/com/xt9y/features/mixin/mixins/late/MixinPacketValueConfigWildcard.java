@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.entity.player.EntityPlayer;
 
 import org.spongepowered.asm.mixin.Final;
@@ -28,6 +29,7 @@ public abstract class MixinPacketValueConfigWildcard {
         CallbackInfo ci) {
         if (!"XT9Y.InterfaceWildcard".equals(Name)) return;
         ci.cancel();
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
 
         // Only permit a toggle for the interface whose valid GUI this player actually opened.
         if (!(player.openContainer instanceof ContainerInterface container) || !container.canInteractWith(player)
