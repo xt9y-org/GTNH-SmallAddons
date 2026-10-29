@@ -16,6 +16,7 @@ import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
 import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.widgets.ToggleButton;
 import com.cleanroommc.modularui.widgets.layout.Flow;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.IWildcardToggleable;
 
 import gregtech.api.modularui2.GTGuiTextures;
@@ -28,6 +29,7 @@ public abstract class MixinCRIBGuiWildcard {
     @Inject(method = "createBottomLeftCornerFlow", at = @At("RETURN"), remap = false, cancellable = true)
     private void gt5u$appendWildcardButton(ModularPanel panel, PanelSyncManager syncManager,
         CallbackInfoReturnable<Flow> cir) {
+        if (!XT9YConfig.cribWildcard) return;
         cir.setReturnValue(
             cir.getReturnValue()
                 .child(createWildcardButton(syncManager)));

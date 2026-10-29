@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.xt9y.features.NonConsumableCRIBRuntime;
+import com.xt9y.features.XT9YConfig;
 
 import gregtech.common.tileentities.machines.IDualInputInventoryWithPattern;
 import gregtech.common.tileentities.machines.MTEHatchCraftingInputME.PatternSlot;
@@ -17,6 +18,7 @@ public abstract class MixinCRIBPatternSlotNonConsumable {
 
     @Inject(method = "getItemInputs", at = @At("RETURN"), cancellable = true)
     private void xt9y$appendSyntheticNonConsumables(CallbackInfoReturnable<ItemStack[]> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         ItemStack[] synthetic = NonConsumableCRIBRuntime.get((IDualInputInventoryWithPattern) (Object) this);
         if (synthetic.length == 0) return;
 

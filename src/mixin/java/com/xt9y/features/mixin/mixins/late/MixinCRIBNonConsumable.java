@@ -21,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.xt9y.features.NonConsumableCRIBRuntime;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternDetails;
 
 import appeng.api.AEApi;
@@ -169,6 +170,7 @@ public abstract class MixinCRIBNonConsumable {
     @Inject(method = "pushPattern", at = @At("HEAD"), cancellable = true)
     private void xt9y$borrowNonConsumables(ICraftingPatternDetails patternDetails,
         net.minecraft.inventory.InventoryCrafting table, CallbackInfoReturnable<Boolean> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (!(patternDetails instanceof INonConsumablePatternDetails ncDetails)) return;
 
         PatternSlot<MTEHatchCraftingInputME> slot = patternDetailsPatternSlotMap.get(patternDetails);

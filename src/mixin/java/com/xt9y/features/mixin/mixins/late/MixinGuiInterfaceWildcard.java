@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.XT9YFeatures;
 import com.xt9y.features.api.IWildcardContainerState;
 
@@ -33,6 +34,7 @@ public abstract class MixinGuiInterfaceWildcard extends GuiUpgradeable {
 
     @Inject(method = "addButtons", at = @At("TAIL"))
     private void xt9y$addWildcardButton(CallbackInfo ci) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         // Reuse the standard left-side column. Find the first unoccupied row so
         // optional AE2/AE2FC controls can keep their existing positions.
         int x = guiLeft - 18;
@@ -63,6 +65,7 @@ public abstract class MixinGuiInterfaceWildcard extends GuiUpgradeable {
 
     @Inject(method = "drawFG", at = @At("HEAD"))
     private void xt9y$drawWildcardState(int offsetX, int offsetY, int mouseX, int mouseY, CallbackInfo ci) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         if (xt9y$wildcardButton != null) {
             xt9y$wildcardButton.setState(((IWildcardContainerState) cvb).xt9y$isWildcardEnabled());
         }
@@ -70,6 +73,7 @@ public abstract class MixinGuiInterfaceWildcard extends GuiUpgradeable {
 
     @Inject(method = "actionPerformed", at = @At("HEAD"), cancellable = true)
     private void xt9y$toggleWildcard(GuiButton button, CallbackInfo ci) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         if (button != xt9y$wildcardButton) return;
         ci.cancel();
         try {

@@ -24,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.xt9y.features.NonConsumablePatternHelper;
 import com.xt9y.features.WildcardPatternHelper;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.XT9YFeatures;
 import com.xt9y.features.api.IWildcardToggleable;
 
@@ -59,10 +60,11 @@ public abstract class MixinCRIBWildcard {
     private final Set<ICraftingPatternDetails> xt9y$syntheticPatterns = new HashSet<>();
 
     public boolean xt9y$isWildcardEnabled() {
-        return xt9y$enableWildcardExpansion;
+        return XT9YConfig.cribWildcard && xt9y$enableWildcardExpansion;
     }
 
     public void xt9y$setWildcardEnabled(boolean val) {
+        if (!XT9YConfig.cribWildcard) return;
         if (xt9y$enableWildcardExpansion != val) {
             XT9YFeatures.LOGGER.info("CRIB wildcard pattern expansion {}", val);
             xt9y$enableWildcardExpansion = val;
@@ -72,6 +74,7 @@ public abstract class MixinCRIBWildcard {
 
     @Inject(method = "getDescription", at = @At("RETURN"), cancellable = true)
     private void gt5u$onGetDescription(CallbackInfoReturnable<String[]> cir) {
+        if (!XT9YConfig.cribWildcard) return;
         String[] original = cir.getReturnValue();
         if (original == null) return;
         String[] extended = Arrays.copyOf(original, original.length + 1);
@@ -107,7 +110,7 @@ public abstract class MixinCRIBWildcard {
     private void gt5u$wrapStockPattern(ICraftingProviderHelper helper, ICraftingMedium medium,
         ICraftingPatternDetails details) {
         // When wildcard mode is on, the RETURN injection below supplies all options, including non-wildcard patterns.
-        if (xt9y$enableWildcardExpansion) return;
+        if (XT9YConfig.cribWildcard && xt9y$enableWildcardExpansion) return;
 
         PatternSlot<MTEHatchCraftingInputME> slot = patternDetailsPatternSlotMap.get(details);
         ICraftingPatternDetails provided = NonConsumablePatternHelper.wrap(details, details.getPattern());
@@ -121,7 +124,7 @@ public abstract class MixinCRIBWildcard {
 
     @Inject(method = "provideCrafting", at = @At("RETURN"))
     private void gt5u$onProvideCrafting(ICraftingProviderHelper craftingTracker, CallbackInfo ci) {
-        if (!isActive() || !xt9y$enableWildcardExpansion) return;
+        if (!XT9YConfig.cribWildcard || !isActive() || !xt9y$enableWildcardExpansion) return;
 
         World world = ((IMetaTileEntity) this).getBaseMetaTileEntity()
             .getWorld();
@@ -157,6 +160,7 @@ public abstract class MixinCRIBWildcard {
     @Inject(method = "pushPattern", at = @At("HEAD"), cancellable = true)
     private void gt5u$onPushPattern(ICraftingPatternDetails patternDetails,
         net.minecraft.inventory.InventoryCrafting table, CallbackInfoReturnable<Boolean> cir) {
+        if (!XT9YConfig.cribWildcard && !XT9YConfig.cribNonConsumable) return;
         if (patternDetailsPatternSlotMap.get(patternDetails) == null) {
             cir.setReturnValue(false);
         }

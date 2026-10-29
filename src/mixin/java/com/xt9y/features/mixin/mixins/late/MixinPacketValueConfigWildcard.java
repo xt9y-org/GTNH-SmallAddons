@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.IWildcardContainerState;
 
 import appeng.container.implementations.ContainerInterface;
@@ -28,6 +29,7 @@ public abstract class MixinPacketValueConfigWildcard {
         CallbackInfo ci) {
         if (!"XT9Y.InterfaceWildcard".equals(Name)) return;
         ci.cancel();
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
 
         // Only permit a toggle for the interface whose valid GUI this player actually opened.
         if (!(player.openContainer instanceof ContainerInterface container) || !container.canInteractWith(player)

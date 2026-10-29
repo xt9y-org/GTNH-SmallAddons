@@ -79,6 +79,8 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     private long lastCpuId = Long.MIN_VALUE;
     private int panelLeft;
     private int panelTop;
+    // Logical panel coordinates remain unscaled; draw and hit regions share this transform.
+    private float panelScale = 1.0F;
     private int hoveredRow = -1;
     private int selectedEntry = -1;
     private boolean leftMouseDown;
@@ -134,17 +136,31 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         position(event.gui);
         createWidgets();
         layoutWidgets();
-        event.buttonList.add(cpuButton);
-        event.buttonList.add(allButton);
+        // Draw the actual AE2 buttons inside the panel transform; register
+        // invisible physical-sized buttons so Minecraft dispatches scaled clicks.
+        event.buttonList.add(
+            new OverlayHitButton(
+                CPU_BUTTON_ID,
+                screenX(panelLeft + 9),
+                screenY(panelTop + 2),
+                scaled(CPU_BUTTON_WIDTH),
+                scaled(HEADER_BUTTON_HEIGHT)));
+        event.buttonList.add(
+            new OverlayHitButton(
+                ALL_BUTTON_ID,
+                screenX(panelLeft + 66),
+                screenY(panelTop + 2),
+                scaled(ALL_BUTTON_WIDTH),
+                scaled(HEADER_BUTTON_HEIGHT)));
 
         for (int row = 0; row < VISIBLE_ROWS; row++) {
             event.buttonList.add(
                 new OverlayHitButton(
                     ROW_BUTTON_BASE_ID - row,
-                    panelLeft + SLOT_LEFT,
-                    panelTop + DATA_TOP + row * SLOT_HEIGHT,
-                    SLOT_WIDTH,
-                    SLOT_HEIGHT));
+                    screenX(panelLeft + SLOT_LEFT),
+                    screenY(panelTop + DATA_TOP + row * SLOT_HEIGHT),
+                    scaled(SLOT_WIDTH),
+                    scaled(SLOT_HEIGHT)));
         }
     }
 
@@ -206,9 +222,15 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         createWidgets();
         layoutWidgets();
         beginPanelRender();
+        GL11.glPushMatrix();
+        GL11.glTranslatef(panelLeft, panelTop, 0.0F);
+        GL11.glScalef(panelScale, panelScale, 1.0F);
+        GL11.glTranslatef(-panelLeft, -panelTop, 0.0F);
+        int logicalMouseX = toLogicalX(mouseX);
+        int logicalMouseY = toLogicalY(mouseY);
         try {
             drawNativeBackground(gui);
-            drawHeader(message, mouseX, mouseY);
+            drawHeader(message, logicalMouseX, logicalMouseY);
             drawSearch(gui);
 
             XTProfilePanelData.View view = currentView(message);
@@ -225,13 +247,14 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
 
             List<XTProfilePanelData.Entry> entries = filteredEntries(view);
             configureScrollbar(entries.size());
-            handlePointerInput(gui, mouseX, mouseY, entries.size());
+            handlePointerInput(gui, logicalMouseX, logicalMouseY, entries.size());
             configureScrollbar(entries.size());
-            hoveredRow = rowAt(mouseX, mouseY, entries.size());
+            hoveredRow = rowAt(logicalMouseX, logicalMouseY, entries.size());
             if (selectedEntry >= entries.size()) selectedEntry = -1;
             drawRows(gui, entries);
             scrollbar.draw(gui);
         } finally {
+            GL11.glPopMatrix();
             GL11.glPopAttrib();
         }
     }
@@ -260,7 +283,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     public boolean hideItemPanelSlot(GuiContainer gui, int x, int y, int w, int h) {
         if (!(gui instanceof GuiCraftingCPU)) return false;
         position(gui);
-        return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, PANEL_WIDTH + 4, PANEL_HEIGHT + 4);
+        return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, scaled(PANEL_WIDTH) + 4, scaled(PANEL_HEIGHT) + 4);
     }
 
     private void createWidgets() {
@@ -566,8 +589,45 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
         int cpuLeft = (gui.width - CPU_WIDTH) / 2;
         int cpuTop = (gui.height - CPU_HEIGHT) / 2;
         int right = cpuLeft + CPU_WIDTH + PANEL_GAP;
-        panelLeft = right + PANEL_WIDTH <= gui.width ? right : Math.max(0, cpuLeft - PANEL_WIDTH - PANEL_GAP);
-        panelTop = Math.max(0, Math.min(gui.height - PANEL_HEIGHT, cpuTop - (PANEL_HEIGHT - CPU_HEIGHT) / 2));
+        int leftSpace = Math.max(0, cpuLeft - PANEL_GAP);
+        int rightSpace = Math.max(0, gui.width - right);
+        int sideSpace = Math.max(leftSpace, rightSpace);
+
+        // GuiScreen.width/height already reflect Minecraft's GUI scale. Fit the
+        // panel in the available side and screen height instead of clipping it.
+        float heightFit = Math.max(1, gui.height) / (float) PANEL_HEIGHT;
+        float widthFit = Math.max(1, sideSpace == 0 ? gui.width : sideSpace) / (float) PANEL_WIDTH;
+        panelScale = Math.min(1.0F, Math.min(widthFit, heightFit));
+
+        int visibleWidth = scaled(PANEL_WIDTH);
+        int visibleHeight = scaled(PANEL_HEIGHT);
+        if (sideSpace == 0) {
+            panelLeft = Math.max(0, (gui.width - visibleWidth) / 2);
+        } else {
+            panelLeft = rightSpace >= leftSpace ? right : cpuLeft - visibleWidth - PANEL_GAP;
+            panelLeft = Math.max(0, Math.min(gui.width - visibleWidth, panelLeft));
+        }
+        panelTop = Math.max(0, Math.min(gui.height - visibleHeight, cpuTop + (CPU_HEIGHT - visibleHeight) / 2));
+    }
+
+    private int scaled(int value) {
+        return Math.max(1, Math.round(value * panelScale));
+    }
+
+    private int screenX(int logicalX) {
+        return panelLeft + Math.round((logicalX - panelLeft) * panelScale);
+    }
+
+    private int screenY(int logicalY) {
+        return panelTop + Math.round((logicalY - panelTop) * panelScale);
+    }
+
+    private int toLogicalX(int screenX) {
+        return panelLeft + (int) Math.floor((screenX - panelLeft) / panelScale);
+    }
+
+    private int toLogicalY(int screenY) {
+        return panelTop + (int) Math.floor((screenY - panelTop) / panelScale);
     }
 
     private int rowAt(int mouseX, int mouseY, int entryCount) {

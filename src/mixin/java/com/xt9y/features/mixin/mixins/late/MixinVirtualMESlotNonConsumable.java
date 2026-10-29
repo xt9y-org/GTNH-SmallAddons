@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
 import appeng.api.storage.StorageName;
@@ -21,6 +22,7 @@ public abstract class MixinVirtualMESlotNonConsumable {
 
     @Inject(method = "drawStackAndOverlay", at = @At("RETURN"))
     private void xt9y$drawNcMarker(Minecraft mc, int mouseX, int mouseY, CallbackInfoReturnable<Boolean> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
         if (!(slot.getAEStack() instanceof IAEItemStack)) return;

@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.xt9y.features.NonConsumableNEITransfer;
 import com.xt9y.features.NonConsumablePatternHelper;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
 import appeng.api.storage.ITerminalHost;
@@ -66,6 +67,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
         at = @At("RETURN"))
     private void xt9y$initNcSync(InventoryPlayer inventoryPlayer, ITerminalHost terminal, boolean craftingModeSupport,
         CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         SyncRegistrar sync = ((AEBaseContainer) (Object) this).getSyncManager()
             .root()
             .child("xt9yNonConsumable");
@@ -79,6 +81,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Unique
     private void xt9y$toggleOnServer(int slotIndex) {
+        if (!XT9YConfig.cribNonConsumable) return;
         xt9y$refreshPatternState();
         if (isCraftingMode()) return;
         if (slotIndex < 0 || slotIndex >= inputs.getSizeInventory() || slotIndex >= Integer.SIZE - 1) return;
@@ -165,6 +168,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Override
     public boolean xt9y$isNonConsumable(int slotIndex) {
+        if (!XT9YConfig.cribNonConsumable) return false;
         xt9y$refreshPatternState();
         return !isCraftingMode() && slotIndex >= 0
             && slotIndex < Integer.SIZE - 1
@@ -173,6 +177,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Override
     public void xt9y$requestToggleNonConsumable(int slotIndex) {
+        if (!XT9YConfig.cribNonConsumable) return;
         xt9y$refreshPatternState();
         if (isCraftingMode() || xt9y$toggleNcAction == null) return;
         if (slotIndex < 0 || slotIndex >= inputs.getSizeInventory() || slotIndex >= Integer.SIZE - 1) return;
@@ -185,6 +190,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Inject(method = "detectAndSendChanges", at = @At("HEAD"))
     private void xt9y$refreshNcState(CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         xt9y$refreshPatternState();
         if (!Platform.isServer() || isCraftingMode()) return;
         xt9y$importTransferredNonConsumables();
@@ -194,6 +200,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Inject(method = "encode", at = @At("HEAD"))
     private void xt9y$captureNcBeforeEncode(CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (isCraftingMode()) {
             xt9y$encodingMask = 0;
             return;
@@ -204,6 +211,7 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Inject(method = "encode", at = @At("TAIL"))
     private void xt9y$writeNcMetadata(CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (isCraftingMode()) return;
         ItemStack encoded = patternSlotOUT.getStack();
         if (encoded == null) return;
@@ -223,11 +231,13 @@ public abstract class MixinContainerPatternTermNonConsumable implements INonCons
 
     @Inject(method = "clear", at = @At("TAIL"))
     private void xt9y$clearNcMetadata(CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (xt9y$ncMaskSync != null) xt9y$ncMaskSync.set(0);
     }
 
     @Inject(method = "setCraftingMode", at = @At("TAIL"))
     private void xt9y$clearNcWhenCrafting(boolean craftingMode, CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (craftingMode && xt9y$ncMaskSync != null) xt9y$ncMaskSync.set(0);
     }
 }

@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
 import appeng.api.storage.StorageName;
@@ -26,6 +27,7 @@ public abstract class MixinVirtualMEPhantomSlotNonConsumable {
     @Inject(method = "handleMouseClicked", at = @At("HEAD"), cancellable = true)
     private void xt9y$toggleNonConsumable(ItemStack itemStack, boolean isExtraAction, int mouseButton,
         CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (mouseButton != 1 || !GuiScreen.isShiftKeyDown()) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
@@ -41,6 +43,7 @@ public abstract class MixinVirtualMEPhantomSlotNonConsumable {
 
     @Inject(method = "addTooltip", at = @At("TAIL"))
     private void xt9y$addNonConsumableTooltip(List<String> lines, CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
         if (!(slot.getAEStack() instanceof IAEItemStack)) return;

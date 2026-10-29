@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.xtprofile.XTProfileDispatchContext;
 
 import appeng.api.networking.crafting.ICraftingPatternDetails;
@@ -19,6 +20,7 @@ public abstract class MixinDualityInterfaceXTProfile {
     @Inject(method = "onPushPatternSuccess", at = @At("HEAD"))
     private void xtprofile$target(TileEntity target, ForgeDirection side, ICraftingPatternDetails pattern,
         CallbackInfo ci) {
+        if (!XT9YConfig.xtProfile) return;
         XTProfileDispatchContext.recordTarget(target);
     }
 }

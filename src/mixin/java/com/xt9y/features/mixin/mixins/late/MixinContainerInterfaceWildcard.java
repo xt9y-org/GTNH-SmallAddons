@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.xt9y.features.WildcardToggleHandler;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.IWildcardContainerState;
 import com.xt9y.features.api.IWildcardToggleable;
 
@@ -32,16 +33,18 @@ public abstract class MixinContainerInterfaceWildcard implements IWildcardContai
 
     @Inject(method = "detectAndSendChanges", at = @At("HEAD"))
     private void xt9y$updateWildcardSync(CallbackInfo ci) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         xt9y$wildcardEnabled = ((IWildcardToggleable) myDuality).isWildcardEnabled();
     }
 
     @Override
     public boolean xt9y$isWildcardEnabled() {
-        return xt9y$wildcardEnabled;
+        return XT9YConfig.ae2InterfaceWildcard && xt9y$wildcardEnabled;
     }
 
     @Override
     public void xt9y$toggleWildcard(EntityPlayer player) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         WildcardToggleHandler.toggleWildcard(player, (IWildcardToggleable) myDuality);
     }
 }
