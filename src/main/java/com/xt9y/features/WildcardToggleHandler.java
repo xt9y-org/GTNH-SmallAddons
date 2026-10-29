@@ -26,7 +26,8 @@ public class WildcardToggleHandler {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || event.world.isRemote
+        if ((!XT9YConfig.cribWildcard && !XT9YConfig.ae2InterfaceWildcard)
+            || event.action != PlayerInteractEvent.Action.RIGHT_CLICK_BLOCK || event.world.isRemote
             || !event.entityPlayer.isSneaking()
             || !isSoftMallet(event.entityPlayer.getHeldItem())) {
             return;
@@ -36,13 +37,16 @@ public class WildcardToggleHandler {
         IWildcardToggleable toggleable = null;
 
         if (tile instanceof BaseMetaTileEntity baseTile) {
+            if (!XT9YConfig.cribWildcard) return;
             IMetaTileEntity meta = baseTile.getMetaTileEntity();
             if (meta instanceof IWildcardToggleable) {
                 toggleable = (IWildcardToggleable) meta;
             }
         } else if (tile instanceof IInterfaceHost) {
+            if (!XT9YConfig.ae2InterfaceWildcard) return;
             toggleable = (IWildcardToggleable) ((IInterfaceHost) tile).getInterfaceDuality();
         } else if (tile instanceof IPartHost && event.face >= 0 && event.face < 6) {
+            if (!XT9YConfig.ae2InterfaceWildcard) return;
             IPart part = ((IPartHost) tile).getPart(ForgeDirection.getOrientation(event.face));
             if (part instanceof IInterfaceHost) {
                 toggleable = (IWildcardToggleable) ((IInterfaceHost) part).getInterfaceDuality();

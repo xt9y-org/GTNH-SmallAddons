@@ -19,6 +19,7 @@ public class WildcardTooltipHandler {
 
     @SubscribeEvent
     public void onTooltip(ItemTooltipEvent event) {
+        if (!XT9YConfig.ae2InterfaceWildcard) return;
         ItemStack stack = event.itemStack;
         if (stack == null || !isAe2Interface(stack)) return;
         event.toolTip

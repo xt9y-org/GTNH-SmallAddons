@@ -57,6 +57,7 @@ public final class NonConsumablePatternHelper {
     }
 
     public static ICraftingPatternDetails wrap(ICraftingPatternDetails details, ItemStack patternStack) {
+        if (!XT9YConfig.cribNonConsumable) return details;
         int mask = readMask(patternStack);
         if (mask == 0 || details.isCraftable()) return details;
 

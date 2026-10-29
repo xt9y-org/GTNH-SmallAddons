@@ -31,8 +31,10 @@ public class XT9YFeatures {
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
+        XT9YConfig.load(event.getSuggestedConfigurationFile());
         // Must run before GT's own preInit so the runnables below are picked up by GT.
-        GregTechAPI.sAfterGTPreload.add(() -> {
+        if (XT9YConfig.linkedInputHatch) {
+            GregTechAPI.sAfterGTPreload.add(() -> {
             XTItemList.LinkedInputHatch.set(
                 new MTELinkedInputHatch(
                     MetaTileEntityIDRegistry.register("LinkedInputHatch", 13534),
@@ -40,20 +42,23 @@ public class XT9YFeatures {
                     "Linked Input Hatch",
                     6).getStackForm(1));
         });
-        GregTechAPI.sBeforeGTPostload.add(new ComponentRecipeLoader());
+            GregTechAPI.sBeforeGTPostload.add(new ComponentRecipeLoader());
+        }
     }
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
-        WildcardToggleHandler.init();
-        WildcardTooltipHandler.init();
-        XTProfileNetwork.init();
-        if (FMLCommonHandler.instance()
-            .getSide()
-            .isClient()) XTProfileClientOverlay.init();
-        FMLCommonHandler.instance()
-            .bus()
-            .register(XTProfileRouteTracker.INSTANCE);
+        if (XT9YConfig.cribWildcard || XT9YConfig.ae2InterfaceWildcard) WildcardToggleHandler.init();
+        if (XT9YConfig.ae2InterfaceWildcard) WildcardTooltipHandler.init();
+        if (XT9YConfig.xtProfile) {
+            XTProfileNetwork.init();
+            if (FMLCommonHandler.instance()
+                .getSide()
+                .isClient()) XTProfileClientOverlay.init();
+            FMLCommonHandler.instance()
+                .bus()
+                .register(XTProfileRouteTracker.INSTANCE);
+        }
     }
 
     @Mod.EventHandler
@@ -61,11 +66,11 @@ public class XT9YFeatures {
 
     @Mod.EventHandler
     public void serverStarting(FMLServerStartingEvent event) {
-        XTProfileRouteTracker.INSTANCE.startSession();
+        if (XT9YConfig.xtProfile) XTProfileRouteTracker.INSTANCE.startSession();
     }
 
     @Mod.EventHandler
     public void serverStopping(FMLServerStoppingEvent event) {
-        XTProfileRouteTracker.INSTANCE.stopSession();
+        if (XT9YConfig.xtProfile) XTProfileRouteTracker.INSTANCE.stopSession();
     }
 }
