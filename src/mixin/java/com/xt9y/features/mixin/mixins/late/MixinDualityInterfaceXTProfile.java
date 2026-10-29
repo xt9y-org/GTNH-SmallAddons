@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.util.ForgeDirection;
 
@@ -19,6 +20,7 @@ public abstract class MixinDualityInterfaceXTProfile {
     @Inject(method = "onPushPatternSuccess", at = @At("HEAD"))
     private void xtprofile$target(TileEntity target, ForgeDirection side, ICraftingPatternDetails pattern,
         CallbackInfo ci) {
+        if (!XT9YConfig.xtProfile) return;
         XTProfileDispatchContext.recordTarget(target);
     }
 }

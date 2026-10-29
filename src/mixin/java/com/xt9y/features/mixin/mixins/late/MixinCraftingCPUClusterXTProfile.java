@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.inventory.InventoryCrafting;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,6 +30,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
                 + "Lnet/minecraft/inventory/InventoryCrafting;)Z"))
     private boolean xtprofile$dispatch(ICraftingMedium medium, ICraftingPatternDetails pattern,
         InventoryCrafting inventory, Operation<Boolean> original) {
+        if (!XT9YConfig.xtProfile) return original.call(medium, pattern, inventory);
         CraftingCPUCluster cpu = (CraftingCPUCluster) (Object) this;
         XTProfileDispatchContext.begin();
         try {
@@ -44,6 +46,7 @@ public abstract class MixinCraftingCPUClusterXTProfile {
 
     @Inject(method = "recordReturnedOutputs", at = @At("HEAD"))
     private void xtprofile$returnedOutput(IAEStack<?> returnedStack, CallbackInfo ci) {
+        if (!XT9YConfig.xtProfile) return;
         XTProfileRouteTracker.INSTANCE.recordReturnedOutput((CraftingCPUCluster) (Object) this, returnedStack);
     }
 }

@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,7 +19,8 @@ public abstract class MixinBetterLoadingScreenXTProfile {
         at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;func_110436_a()V"),
         require = 0)
     private void xtprofile$suppressBackgroundRefresh(Minecraft minecraft) {
-        if (XTProfileLoadingScreenCompat.shouldSuppressBackgroundResourceRefresh(
+        if (XT9YConfig.betterLoadingScreenCompat
+            && XTProfileLoadingScreenCompat.shouldSuppressBackgroundResourceRefresh(
             Thread.currentThread()
                 .getName()))
             return;
