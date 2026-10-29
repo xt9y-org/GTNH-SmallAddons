@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.item.ItemStack;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,6 +25,7 @@ public abstract class MixinNEEPatternTerminalNonConsumable {
     @Inject(method = "packProcessRecipe", at = @At("HEAD"))
     private void xt9y$beginTransfer(IRecipeHandler recipe, int recipeIndex, int multiplier,
         CallbackInfoReturnable<?> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         xt9y$currentNc.set(false);
     }
 
@@ -34,7 +36,7 @@ public abstract class MixinNEEPatternTerminalNonConsumable {
             target = "Lcom/github/vfyjxf/nee/utils/ItemUtils;isInBlackList(Lnet/minecraft/item/ItemStack;Ljava/lang/String;Ljava/lang/String;)Z"),
         index = 0)
     private ItemStack xt9y$stripMarkerBeforeFiltering(ItemStack stack) {
-        xt9y$currentNc.set(NonConsumableNEITransfer.strip(stack));
+        if (XT9YConfig.cribNonConsumable) xt9y$currentNc.set(NonConsumableNEITransfer.strip(stack));
         return stack;
     }
 
@@ -46,7 +48,7 @@ public abstract class MixinNEEPatternTerminalNonConsumable {
             ordinal = 0),
         index = 0)
     private ItemStack xt9y$markSerializedInput(ItemStack stack) {
-        boolean nc = Boolean.TRUE.equals(xt9y$currentNc.get());
+        boolean nc = XT9YConfig.cribNonConsumable && Boolean.TRUE.equals(xt9y$currentNc.get());
         xt9y$currentNc.set(false);
         if (!nc || stack == null) return stack;
 

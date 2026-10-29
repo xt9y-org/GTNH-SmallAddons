@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.item.ItemStack;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +18,7 @@ public abstract class MixinCRIBPatternSlotNonConsumable {
 
     @Inject(method = "getItemInputs", at = @At("RETURN"), cancellable = true)
     private void xt9y$appendSyntheticNonConsumables(CallbackInfoReturnable<ItemStack[]> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         ItemStack[] synthetic = NonConsumableCRIBRuntime.get((IDualInputInventoryWithPattern) (Object) this);
         if (synthetic.length == 0) return;
 

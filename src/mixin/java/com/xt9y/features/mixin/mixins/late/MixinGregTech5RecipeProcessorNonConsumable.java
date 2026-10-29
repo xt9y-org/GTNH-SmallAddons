@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public abstract class MixinGregTech5RecipeProcessorNonConsumable {
     @Inject(method = "getRecipeInput", at = @At("HEAD"))
     private void xt9y$captureNonConsumables(IRecipeHandler recipe, int recipeIndex, String identifier,
         CallbackInfoReturnable<List<PositionedStack>> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         List<PositionedStack> inputs = recipe.getIngredientStacks(recipeIndex);
         if (inputs == null || inputs.isEmpty()) {
             xt9y$sourceInputs.remove();
@@ -60,6 +62,7 @@ public abstract class MixinGregTech5RecipeProcessorNonConsumable {
     @Inject(method = "getRecipeInput", at = @At("RETURN"), cancellable = true)
     private void xt9y$restoreNonConsumables(IRecipeHandler recipe, int recipeIndex, String identifier,
         CallbackInfoReturnable<List<PositionedStack>> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         List<PositionedStack> source = xt9y$sourceInputs.get();
         boolean[] nc = xt9y$sourceNc.get();
         xt9y$sourceInputs.remove();

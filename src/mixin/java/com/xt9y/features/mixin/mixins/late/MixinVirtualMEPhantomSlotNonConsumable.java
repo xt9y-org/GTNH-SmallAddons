@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
@@ -26,6 +27,7 @@ public abstract class MixinVirtualMEPhantomSlotNonConsumable {
     @Inject(method = "handleMouseClicked", at = @At("HEAD"), cancellable = true)
     private void xt9y$toggleNonConsumable(ItemStack itemStack, boolean isExtraAction, int mouseButton,
         CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (mouseButton != 1 || !GuiScreen.isShiftKeyDown()) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
@@ -41,6 +43,7 @@ public abstract class MixinVirtualMEPhantomSlotNonConsumable {
 
     @Inject(method = "addTooltip", at = @At("TAIL"))
     private void xt9y$addNonConsumableTooltip(List<String> lines, CallbackInfo ci) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
         if (!(slot.getAEStack() instanceof IAEItemStack)) return;

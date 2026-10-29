@@ -1,5 +1,6 @@
 package com.xt9y.features.mixin.mixins.late;
 
+import com.xt9y.features.XT9YConfig;
 import net.minecraft.client.Minecraft;
 
 import org.lwjgl.opengl.GL11;
@@ -21,6 +22,7 @@ public abstract class MixinVirtualMESlotNonConsumable {
 
     @Inject(method = "drawStackAndOverlay", at = @At("RETURN"))
     private void xt9y$drawNcMarker(Minecraft mc, int mouseX, int mouseY, CallbackInfoReturnable<Boolean> cir) {
+        if (!XT9YConfig.cribNonConsumable) return;
         if (!((Object) this instanceof VirtualMEPatternSlot slot)) return;
         if (slot.getStorageName() != StorageName.CRAFTING_INPUT) return;
         if (!(slot.getAEStack() instanceof IAEItemStack)) return;
