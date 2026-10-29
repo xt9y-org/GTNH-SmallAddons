@@ -22,22 +22,34 @@ public final class XT9YConfig {
         config.load();
 
         linkedInputHatch = config.getBoolean(
-            "linkedInputHatch", "features", true,
+            "linkedInputHatch",
+            "features",
+            true,
             "Register the Linked Input Hatch and its recipe. Leave enabled when the world contains linked hatches.");
         cribWildcard = config.getBoolean(
-            "cribWildcard", "features", true,
+            "cribWildcard",
+            "features",
+            true,
             "Enable CRIB wildcard expansion, button and Soft Mallet toggle.");
         ae2InterfaceWildcard = config.getBoolean(
-            "ae2InterfaceWildcard", "features", true,
+            "ae2InterfaceWildcard",
+            "features",
+            true,
             "Enable wildcard expansion and controls for AE2 Interfaces, including AE2FC dual interfaces.");
         cribNonConsumable = config.getBoolean(
-            "cribNonConsumable", "features", true,
+            "cribNonConsumable",
+            "features",
+            true,
             "Enable non-consumable processing patterns, CRIB reservations and NEI recipe transfer integration.");
         xtProfile = config.getBoolean(
-            "xtProfile", "features", true,
+            "xtProfile",
+            "features",
+            true,
             "Enable XTProfile timing/route tracking and the AE2 Crafting CPU side panel.");
         betterLoadingScreenCompat = config.getBoolean(
-            "betterLoadingScreenCompat", "features", true,
+            "betterLoadingScreenCompat",
+            "features",
+            true,
             "Prevent an extra Better Loading Screen resource refresh on its rendering thread.");
 
         if (config.hasChanged()) config.save();

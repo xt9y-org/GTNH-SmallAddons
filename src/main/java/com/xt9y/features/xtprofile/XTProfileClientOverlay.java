@@ -283,8 +283,7 @@ public final class XTProfileClientOverlay implements INEIGuiHandler {
     public boolean hideItemPanelSlot(GuiContainer gui, int x, int y, int w, int h) {
         if (!(gui instanceof GuiCraftingCPU)) return false;
         position(gui);
-        return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, scaled(PANEL_WIDTH) + 4,
-            scaled(PANEL_HEIGHT) + 4);
+        return overlaps(x, y, w, h, panelLeft - 2, panelTop - 2, scaled(PANEL_WIDTH) + 4, scaled(PANEL_HEIGHT) + 4);
     }
 
     private void createWidgets() {

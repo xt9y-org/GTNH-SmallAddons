@@ -79,7 +79,9 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
     @Inject(method = "provideCrafting", at = @At("RETURN"))
     private void onProvideCrafting(ICraftingProviderHelper craftingTracker, CallbackInfo ci) {
         xt9y$expandedToOriginal.clear();
-        if (!XT9YConfig.ae2InterfaceWildcard || !gridProxy.isActive() || !xt9y$enableWildcardExpansion || craftingList == null) return;
+        if (!XT9YConfig.ae2InterfaceWildcard || !gridProxy.isActive()
+            || !xt9y$enableWildcardExpansion
+            || craftingList == null) return;
 
         World world = iHost.getTileEntity()
             .getWorldObj();
@@ -108,8 +110,7 @@ public abstract class MixinDualityInterface implements IWildcardToggleable {
     private boolean acceptExpandedPattern(List<ICraftingPatternDetails> registered, Object pattern) {
         // Only bypass AE2's membership check. The expanded pattern and its actual
         // crafting table must reach the target machine unchanged.
-        return registered.contains(pattern)
-            || (XT9YConfig.ae2InterfaceWildcard && xt9y$enableWildcardExpansion
-                && xt9y$expandedToOriginal.containsKey(pattern));
+        return registered.contains(pattern) || (XT9YConfig.ae2InterfaceWildcard && xt9y$enableWildcardExpansion
+            && xt9y$expandedToOriginal.containsKey(pattern));
     }
 }

@@ -21,8 +21,8 @@ public abstract class MixinBetterLoadingScreenXTProfile {
     private void xtprofile$suppressBackgroundRefresh(Minecraft minecraft) {
         if (XT9YConfig.betterLoadingScreenCompat
             && XTProfileLoadingScreenCompat.shouldSuppressBackgroundResourceRefresh(
-            Thread.currentThread()
-                .getName()))
+                Thread.currentThread()
+                    .getName()))
             return;
         minecraft.refreshResources();
     }
