@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import net.minecraft.inventory.InventoryCrafting;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -10,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.xtprofile.XTProfileDispatchContext;
 import com.xt9y.features.xtprofile.XTProfileRouteTracker;
 

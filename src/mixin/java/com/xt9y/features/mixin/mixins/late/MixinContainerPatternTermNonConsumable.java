@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import net.minecraft.entity.player.InventoryPlayer;
 import net.minecraft.item.ItemStack;
 
@@ -14,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.xt9y.features.NonConsumableNEITransfer;
 import com.xt9y.features.NonConsumablePatternHelper;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
 import appeng.api.storage.ITerminalHost;

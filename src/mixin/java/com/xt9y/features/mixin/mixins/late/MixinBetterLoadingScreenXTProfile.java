@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import net.minecraft.client.Minecraft;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -8,6 +7,7 @@ import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.xtprofile.XTProfileLoadingScreenCompat;
 
 @Pseudo

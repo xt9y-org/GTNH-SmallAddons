@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import net.minecraft.item.ItemStack;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.xt9y.features.NonConsumableCRIBRuntime;
+import com.xt9y.features.XT9YConfig;
 
 import gregtech.common.tileentities.machines.IDualInputInventoryWithPattern;
 import gregtech.common.tileentities.machines.MTEHatchCraftingInputME.PatternSlot;

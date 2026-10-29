@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import net.minecraft.client.Minecraft;
 
 import org.lwjgl.opengl.GL11;
@@ -9,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.api.INonConsumablePatternTerminal;
 
 import appeng.api.storage.StorageName;

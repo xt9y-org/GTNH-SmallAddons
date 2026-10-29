@@ -1,11 +1,11 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.xtprofile.XTProfileClientOverlay;
 
 import appeng.client.gui.implementations.GuiCraftingCPU;
