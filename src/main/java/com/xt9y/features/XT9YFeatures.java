@@ -35,13 +35,13 @@ public class XT9YFeatures {
         // Must run before GT's own preInit so the runnables below are picked up by GT.
         if (XT9YConfig.linkedInputHatch) {
             GregTechAPI.sAfterGTPreload.add(() -> {
-            XTItemList.LinkedInputHatch.set(
-                new MTELinkedInputHatch(
-                    MetaTileEntityIDRegistry.register("LinkedInputHatch", 13534),
-                    "ggfab.machine.linked_input_hatch",
-                    "Linked Input Hatch",
-                    6).getStackForm(1));
-        });
+                XTItemList.LinkedInputHatch.set(
+                    new MTELinkedInputHatch(
+                        MetaTileEntityIDRegistry.register("LinkedInputHatch", 13534),
+                        "ggfab.machine.linked_input_hatch",
+                        "Linked Input Hatch",
+                        6).getStackForm(1));
+            });
             GregTechAPI.sBeforeGTPostload.add(new ComponentRecipeLoader());
         }
     }

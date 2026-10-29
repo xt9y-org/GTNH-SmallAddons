@@ -1,6 +1,5 @@
 package com.xt9y.features.mixin.mixins.late;
 
-import com.xt9y.features.XT9YConfig;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.xt9y.features.NonConsumablePatternHelper;
 import com.xt9y.features.WildcardPatternHelper;
+import com.xt9y.features.XT9YConfig;
 import com.xt9y.features.XT9YFeatures;
 import com.xt9y.features.api.IWildcardToggleable;
 
