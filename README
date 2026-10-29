@@ -35,3 +35,20 @@ Time --> AE2 processing dispatch until expected output returns
 parallel --> overlapping route operations are not double-counted
 TPS --> separate GregTech machine tick-cost sampling
 search --> Interface / CRIB / machine names
+
+Configuration
+file --> config/xt9yfeatures.cfg (generated on first launch)
+[features] --> each switch defaults to true; restart game/server after changes
+linkedInputHatch --> Linked Input Hatch registration and recipe
+cribWildcard --> CRIB wildcard expansion, button, Soft Mallet toggle
+ae2InterfaceWildcard --> full-block, cable-part and AE2FC Interface wildcard features
+cribNonConsumable --> non-consumable pattern inputs, reservations and NEI integration
+xtProfile --> route tracking, timings and Crafting CPU side panel
+betterLoadingScreenCompat --> Better Loading Screen background-refresh workaround
+server/client --> keep gameplay options matching on both sides
+existing worlds --> do not disable linkedInputHatch while installed hatches are present
+NC reservations --> existing reserved items are still refunded if cribNonConsumable is disabled
+
+XTProfile GUI
+scale --> panel automatically fits alongside the AE2 Crafting CPU at the current Minecraft GUI scale
+input --> panel buttons, search, rows and scrollbar use the scaled coordinate mapping
