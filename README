@@ -52,3 +52,21 @@ NC reservations --> existing reserved items are still refunded if cribNonConsuma
 XTProfile GUI
 scale --> panel automatically fits alongside the AE2 Crafting CPU at the current Minecraft GUI scale
 input --> panel buttons, search, rows and scrollbar use the scaled coordinate mapping
+
+Virtual Extraction (GTNH)
+config --> config/xt9yfeatures.cfg; generated/saved every launch, with defaults and descriptions
+voidMiners --> false by default; GT single-block miners and multiblock ore drills produce the current dimension's weighted Void Miner ores without removing terrain
+voidPumps --> false by default; GT fluid-block pumps leave source fluids intact; GT underground-fluid drills use pristine per-chunk yields and do not lower deposits
+oreSourceBlock --> true by default; registers the Virtual Ore Chunk Source even when disabled, to preserve existing block IDs
+block recipe --> I R I / R D R / I R I (I: iron block, R: redstone, D: diamond block)
+placement --> PersonalSpace worlds only, at most one source per chunk
+right-click --> next dimension; sneak + right-click --> previous dimension
+dimensions --> dynamically enumerated from GTNH's enabled Void Miner ore pools: Overworld, Underdark/Deep Dark, Nether, End and registered planets
+scope --> ONLY the one chunk containing the source, in the PersonalSpace dimension where the block is placed
+ore outputs --> sampled using GTNH ore weights (not all ore types in every individual cycle); does not generate ore blocks in terrain
+requirements --> normal machine power, progress, output limitations and multiblock drilling fluid still apply
+defaults --> major gameplay changes are off until enabled explicitly; changing the config requires restart
+persistence --> tile NBT in the world save is authoritative; oreSources section of config is a preload/readable mirror keyed by save name + seed + dimension ID + chunk
+safety --> config entries from worlds not currently loaded are ignored; no world or chunk is created/loaded from them; remove the block to remove its entry
+compatibility --> disabling oreSourceBlock disables the effect, but leaves its registered block and existing tile NBT intact
+notes --> unrelated mods' independent mining/pumping implementations are not automatically intercepted
