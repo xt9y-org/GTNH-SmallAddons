@@ -5,3 +5,5 @@ ggfab.wildcard.toggle=Wildcard expansion: %s
 xt9yfeatures.tooltip.wildcard.mallet=Sneak + soft mallet toggles wildcard pattern expansion
 xt9yfeatures.gui.wildcard=Wildcard Pattern Expansion
 xt9yfeatures.gui.wildcard.hint=Toggle same-material processing pattern variants (Soft Mallet + sneak also works)
+
+tile.xt9yfeatures.ore_source.name=Virtual Ore Chunk Source
