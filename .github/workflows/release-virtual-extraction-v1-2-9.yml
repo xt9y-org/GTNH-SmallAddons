@@ -1,0 +1,39 @@
+name: Release virtual extraction v1.2.9
+
+on:
+  workflow_run:
+    workflows: ["Build and test"]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  release:
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_commit.message == 'merge: virtual extraction and ore sources (#13)'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+      - name: Tag tested commit and dispatch existing release workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if git ls-remote --exit-code --tags origin refs/tags/v1.2.9 >/dev/null 2>&1; then
+            echo "v1.2.9 already exists; skipping"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag v1.2.9 "$RELEASE_SHA"
+          git push origin refs/tags/v1.2.9
+          gh workflow run release-tags.yml --repo "$GH_REPO" --ref v1.2.9
