@@ -14,18 +14,18 @@ jobs:
   release:
     if: >-
       github.event.workflow_run.conclusion == 'success' &&
-      startsWith(github.event.workflow_run.head_commit.message, 'merge: virtual extraction and ore sources (#13)')
+      github.event.workflow_run.head_branch == 'master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: 2608dadcf16c9e940894b9aacc7ae72401e03ea0
           fetch-depth: 0
       - name: Tag tested commit and dispatch existing release workflow
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+          RELEASE_SHA: 2608dadcf16c9e940894b9aacc7ae72401e03ea0
         run: |
           set -euo pipefail
           if git ls-remote --exit-code --tags origin refs/tags/v1.2.9 >/dev/null 2>&1; then
