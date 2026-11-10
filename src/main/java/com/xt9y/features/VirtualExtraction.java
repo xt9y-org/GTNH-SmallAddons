@@ -51,7 +51,8 @@ public final class VirtualExtraction {
 
         DropMap map = VoidMinerUtility.dropMapsByDimName.get(dim);
         DropMap extras = VoidMinerUtility.extraDropsByDimName.get(dim);
-        if (map == null || map.getInternalMap().isEmpty()) map = fallbackPool(dim);
+        if (map == null || map.getInternalMap()
+            .isEmpty()) map = fallbackPool(dim);
         map.isDistributionCached(extras);
         if (map.getOres() == null || map.getOres().length == 0) return null;
 
@@ -105,7 +106,8 @@ public final class VirtualExtraction {
         DropMap map = new DropMap();
         List<StoneType> stoneTypes = DimensionHelper.getStoneTypes(dimension);
         for (WorldgenGTOreLayer layer : WorldgenGTOreLayer.sList) {
-            if (!layer.mEnabled || !layer.getAllowedDimensions().contains(dimension)) continue;
+            if (!layer.mEnabled || !layer.getAllowedDimensions()
+                .contains(dimension)) continue;
             if (stoneTypes.isEmpty()) {
                 map.addDrop(layer.mPrimary, layer.mWeight);
                 map.addDrop(layer.mSecondary, layer.mWeight);
@@ -119,7 +121,8 @@ public final class VirtualExtraction {
             }
         }
         for (WorldgenGTOreSmallPieces layer : WorldgenGTOreSmallPieces.sList) {
-            if (!layer.mEnabled || !layer.getAllowedDimensions().contains(dimension)) continue;
+            if (!layer.mEnabled || !layer.getAllowedDimensions()
+                .contains(dimension)) continue;
             if (stoneTypes.isEmpty()) {
                 map.addDrop(layer.getMaterial(), layer.mAmount);
             } else {
