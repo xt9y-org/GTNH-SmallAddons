@@ -123,7 +123,11 @@ public final class OreSourceBlock extends BlockContainer {
         record(world, tile);
         player.addChatMessage(
             new ChatComponentText(
-                "Virtual ore chunk [" + (x >> 4) + ", " + (z >> 4) + "]: " + tile.dimensionName
+                "Virtual ore chunk [" + (x >> 4)
+                    + ", "
+                    + (z >> 4)
+                    + "]: "
+                    + tile.dimensionName
                     + " (right-click next, sneak + right-click previous)"));
         return true;
     }
@@ -144,8 +148,8 @@ public final class OreSourceBlock extends BlockContainer {
             if (entity instanceof SourceTile && world.getBlock(cached.x, cached.y, cached.z) == INSTANCE) {
                 SourceTile tile = (SourceTile) entity;
                 // An explicitly edited, valid config mode applies only to an existing matching tile.
-                if (!tile.dimensionName.equals(cached.mode)
-                    && VirtualExtraction.availableDimensions().contains(cached.mode)) {
+                if (!tile.dimensionName.equals(cached.mode) && VirtualExtraction.availableDimensions()
+                    .contains(cached.mode)) {
                     tile.dimensionName = cached.mode;
                     tile.markDirty();
                     world.markBlockForUpdate(tile.xCoord, tile.yCoord, tile.zCoord);
@@ -156,7 +160,8 @@ public final class OreSourceBlock extends BlockContainer {
 
         // The tile NBT wins over a stale or manually edited config entry.
         for (TileEntity entity : world.getChunkFromChunkCoords(chunkX, chunkZ).chunkTileEntityMap.values()) {
-            if (entity instanceof SourceTile && world.getBlock(entity.xCoord, entity.yCoord, entity.zCoord) == INSTANCE) {
+            if (entity instanceof SourceTile
+                && world.getBlock(entity.xCoord, entity.yCoord, entity.zCoord) == INSTANCE) {
                 SourceTile source = (SourceTile) entity;
                 if (cached == null || !cached.same(source)) record(world, source);
                 return source.dimensionName;
@@ -168,17 +173,30 @@ public final class OreSourceBlock extends BlockContainer {
 
     public static synchronized void preload(Configuration configuration) {
         PRELOADED.clear();
-        for (Map.Entry<String, Property> property : configuration.getCategory(CATEGORY).getValues().entrySet()) {
-            Entry entry = Entry.parse(property.getValue().getString());
+        for (Map.Entry<String, Property> property : configuration.getCategory(CATEGORY)
+            .getValues()
+            .entrySet()) {
+            Entry entry = Entry.parse(
+                property.getValue()
+                    .getString());
             if (entry != null) PRELOADED.put(property.getKey(), entry);
         }
     }
 
     private static String key(World world, int chunkX, int chunkZ) {
         // The world name and seed keep independent saves/dimensions isolated.
-        String id = world.getWorldInfo().getWorldName() + "|" + world.getSeed() + "|"
-            + world.provider.dimensionId + "|" + chunkX + "|" + chunkZ;
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(id.getBytes(StandardCharsets.UTF_8));
+        String id = world.getWorldInfo()
+            .getWorldName() + "|"
+            + world.getSeed()
+            + "|"
+            + world.provider.dimensionId
+            + "|"
+            + chunkX
+            + "|"
+            + chunkZ;
+        return Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(id.getBytes(StandardCharsets.UTF_8));
     }
 
     private static synchronized void record(World world, SourceTile tile) {
@@ -186,7 +204,8 @@ public final class OreSourceBlock extends BlockContainer {
         String key = key(world, tile.xCoord >> 4, tile.zCoord >> 4);
         Entry entry = new Entry(tile.xCoord, tile.yCoord, tile.zCoord, tile.dimensionName);
         PRELOADED.put(key, entry);
-        XT9YConfig.configuration.get(CATEGORY, key, entry.toString()).set(entry.toString());
+        XT9YConfig.configuration.get(CATEGORY, key, entry.toString())
+            .set(entry.toString());
         XT9YConfig.configuration.save();
     }
 
@@ -196,7 +215,8 @@ public final class OreSourceBlock extends BlockContainer {
         if (entry == null || entry.x != x || entry.y != y || entry.z != z) return;
         PRELOADED.remove(key);
         if (XT9YConfig.configuration != null) {
-            XT9YConfig.configuration.getCategory(CATEGORY).remove(key);
+            XT9YConfig.configuration.getCategory(CATEGORY)
+                .remove(key);
             XT9YConfig.configuration.save();
         }
     }
@@ -229,8 +249,11 @@ public final class OreSourceBlock extends BlockContainer {
             String[] parts = value.split("\\|", 4);
             if (parts.length != 4 || parts[3].isEmpty()) return null;
             try {
-                return new Entry(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
-                    Integer.parseInt(parts[2]), parts[3]);
+                return new Entry(
+                    Integer.parseInt(parts[0]),
+                    Integer.parseInt(parts[1]),
+                    Integer.parseInt(parts[2]),
+                    parts[3]);
             } catch (NumberFormatException ignored) {
                 return null;
             }

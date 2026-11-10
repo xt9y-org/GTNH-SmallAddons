@@ -24,8 +24,8 @@ public abstract class MixinMTEOreDrillingPlantVoidOre {
     }
 
     @Inject(method = { "workingDownward", "workingAtBottom" }, at = @At("HEAD"), cancellable = true, remap = false)
-    private void xt9y$virtualOre(ItemStack stack, int xDrill, int yDrill, int zDrill, int xPipe, int zPipe,
-        int yHead, int oldYHead, CallbackInfoReturnable<Boolean> cir) {
+    private void xt9y$virtualOre(ItemStack stack, int xDrill, int yDrill, int zDrill, int xPipe, int zPipe, int yHead,
+        int oldYHead, CallbackInfoReturnable<Boolean> cir) {
         MTEOreDrillingPlantBase drill = (MTEOreDrillingPlantBase) (Object) this;
         IGregTechTileEntity base = drill.getBaseMetaTileEntity();
         if (base == null || !VirtualExtraction.isVirtual(base.getWorld(), xDrill, zDrill)) return;

@@ -28,14 +28,19 @@ public abstract class MixinUndergroundOilNonDepleting {
         if (!XT9YConfig.voidPumps || world == null || world.isRemote) return;
 
         Pair<GTUOFluid, Integer> deposit = UndergroundOil.getPristineAmount(world, chunkX, chunkZ);
-        if (deposit == null || deposit.getLeft() == null || deposit.getLeft().getFluid() == null) {
+        if (deposit == null || deposit.getLeft() == null
+            || deposit.getLeft()
+                .getFluid() == null) {
             cir.setReturnValue(null);
             return;
         }
 
         double speed = coefficient < 0 ? -(double) coefficient : (double) coefficient;
-        int amount = (int) Math.min(Integer.MAX_VALUE,
-            Math.floor(deposit.getRight() * speed / UndergroundOil.DIVIDER));
-        cir.setReturnValue(amount > 0 ? new FluidStack(deposit.getLeft().getFluid(), amount) : null);
+        int amount = (int) Math.min(Integer.MAX_VALUE, Math.floor(deposit.getRight() * speed / UndergroundOil.DIVIDER));
+        cir.setReturnValue(
+            amount > 0 ? new FluidStack(
+                deposit.getLeft()
+                    .getFluid(),
+                amount) : null);
     }
 }

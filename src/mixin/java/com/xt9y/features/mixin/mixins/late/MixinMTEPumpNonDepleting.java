@@ -23,8 +23,7 @@ public abstract class MixinMTEPumpNonDepleting {
             value = "INVOKE",
             target = "Lnet/minecraftforge/fluids/IFluidBlock;drain(Lnet/minecraft/world/World;IIIZ)Lnet/minecraftforge/fluids/FluidStack;"),
         remap = false)
-    private FluidStack xt9y$simulateFluidDrain(IFluidBlock block, World world, int x, int y, int z,
-        boolean doDrain) {
+    private FluidStack xt9y$simulateFluidDrain(IFluidBlock block, World world, int x, int y, int z, boolean doDrain) {
         return block.drain(world, x, y, z, doDrain && !XT9YConfig.voidPumps);
     }
 

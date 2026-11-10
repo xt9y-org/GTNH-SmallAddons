@@ -49,17 +49,22 @@ public final class VirtualExtraction {
         map.isDistributionCached(extras);
         if (map.getOres() == null || map.getOres().length == 0) return null;
 
-        return map.nextOre().getItemStack();
+        return map.nextOre()
+            .getItemStack();
     }
 
     public static List<String> availableDimensions() {
         Map<String, DropMap> maps = VoidMinerUtility.dropMapsByDimName;
         List<String> names = new ArrayList<>();
         for (Map.Entry<String, DropMap> entry : maps.entrySet()) {
-            if (!entry.getValue().getInternalMap().isEmpty()) names.add(entry.getKey());
+            if (!entry.getValue()
+                .getInternalMap()
+                .isEmpty()) names.add(entry.getKey());
         }
         for (Map.Entry<String, DropMap> entry : VoidMinerUtility.extraDropsByDimName.entrySet()) {
-            if (!entry.getValue().getInternalMap().isEmpty() && !names.contains(entry.getKey())) {
+            if (!entry.getValue()
+                .getInternalMap()
+                .isEmpty() && !names.contains(entry.getKey())) {
                 names.add(entry.getKey());
             }
         }
