@@ -61,7 +61,7 @@ oreSourceBlock --> true by default; registers the Virtual Ore Chunk Source even 
 block recipe --> I R I / R D R / I R I (I: iron block, R: redstone, D: diamond block)
 placement --> PersonalSpace worlds only, at most one source per chunk
 right-click --> next dimension; sneak + right-click --> previous dimension
-dimensions --> dynamically enumerated from GTNH's enabled Void Miner ore pools: Overworld, Underdark/Deep Dark, Nether, End and registered planets
+dimensions --> dynamically enumerated from GTNH's native Void Miner pools AND all enabled ore generation layers (including planets that native Void Mining excludes): Overworld, Underdark/Deep Dark, Nether, End and registered planets
 scope --> ONLY the one chunk containing the source, in the PersonalSpace dimension where the block is placed
 ore outputs --> sampled using GTNH ore weights (not all ore types in every individual cycle); does not generate ore blocks in terrain
 requirements --> normal machine power, progress, output limitations and multiblock drilling fluid still apply

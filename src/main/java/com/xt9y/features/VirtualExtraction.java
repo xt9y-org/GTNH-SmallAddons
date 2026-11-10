@@ -2,6 +2,7 @@ package com.xt9y.features;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -12,9 +13,15 @@ import bwcrossmod.galacticgreg.VoidMinerUtility;
 import bwcrossmod.galacticgreg.VoidMinerUtility.DropMap;
 import galacticgreg.api.ModDimensionDef;
 import galacticgreg.api.enums.DimensionDef;
+import gregtech.api.enums.StoneType;
+import gregtech.common.WorldgenGTOreLayer;
+import gregtech.common.WorldgenGTOreSmallPieces;
+import gtneioreplugin.util.DimensionHelper;
 
 /** Server-side ore selection; never changes terrain or consults another world. */
 public final class VirtualExtraction {
+
+    private static final Map<String, DropMap> EXTRA_DIMENSION_POOLS = new HashMap<>();
 
     public static boolean isVirtual(World world, int blockX, int blockZ) {
         return dimension(world, blockX, blockZ) != null;
@@ -44,8 +51,7 @@ public final class VirtualExtraction {
 
         DropMap map = VoidMinerUtility.dropMapsByDimName.get(dim);
         DropMap extras = VoidMinerUtility.extraDropsByDimName.get(dim);
-        if (map == null && extras == null) return null;
-        if (map == null) map = new DropMap();
+        if (map == null || map.getInternalMap().isEmpty()) map = fallbackPool(dim);
         map.isDistributionCached(extras);
         if (map.getOres() == null || map.getOres().length == 0) return null;
 
@@ -68,12 +74,60 @@ public final class VirtualExtraction {
                 names.add(entry.getKey());
             }
         }
+        // Unlike GTNH's native Void Miner, the source can select dimensions normally
+        // excluded from Void Mining but still containing real ore generation layers.
+        for (WorldgenGTOreLayer layer : WorldgenGTOreLayer.sList) {
+            if (layer.mEnabled) {
+                for (String dimension : layer.getAllowedDimensions()) {
+                    if (!names.contains(dimension)) names.add(dimension);
+                }
+            }
+        }
+        for (WorldgenGTOreSmallPieces layer : WorldgenGTOreSmallPieces.sList) {
+            if (layer.mEnabled) {
+                for (String dimension : layer.getAllowedDimensions()) {
+                    if (!names.contains(dimension)) names.add(dimension);
+                }
+            }
+        }
         Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
         for (String preferred : new String[] { DimensionDef.DimNames.NETHER, DimensionDef.DimNames.DEEPDARK,
             DimensionDef.DimNames.OW }) {
             if (names.remove(preferred)) names.add(0, preferred);
         }
         return names;
+    }
+
+    private static synchronized DropMap fallbackPool(String dimension) {
+        DropMap cached = EXTRA_DIMENSION_POOLS.get(dimension);
+        if (cached != null) return cached;
+
+        DropMap map = new DropMap();
+        List<StoneType> stoneTypes = DimensionHelper.getStoneTypes(dimension);
+        for (WorldgenGTOreLayer layer : WorldgenGTOreLayer.sList) {
+            if (!layer.mEnabled || !layer.getAllowedDimensions().contains(dimension)) continue;
+            if (stoneTypes.isEmpty()) {
+                map.addDrop(layer.mPrimary, layer.mWeight);
+                map.addDrop(layer.mSecondary, layer.mWeight);
+                map.addDrop(layer.mSporadic, layer.mWeight / 8f);
+                map.addDrop(layer.mBetween, layer.mWeight / 8f);
+            } else {
+                map.addDrop(layer.mPrimary, stoneTypes, layer.mWeight);
+                map.addDrop(layer.mSecondary, stoneTypes, layer.mWeight);
+                map.addDrop(layer.mSporadic, stoneTypes, layer.mWeight / 8f);
+                map.addDrop(layer.mBetween, stoneTypes, layer.mWeight / 8f);
+            }
+        }
+        for (WorldgenGTOreSmallPieces layer : WorldgenGTOreSmallPieces.sList) {
+            if (!layer.mEnabled || !layer.getAllowedDimensions().contains(dimension)) continue;
+            if (stoneTypes.isEmpty()) {
+                map.addDrop(layer.getMaterial(), layer.mAmount);
+            } else {
+                map.addDrop(layer.getMaterial(), stoneTypes, layer.mAmount);
+            }
+        }
+        EXTRA_DIMENSION_POOLS.put(dimension, map);
+        return map;
     }
 
     private VirtualExtraction() {}
