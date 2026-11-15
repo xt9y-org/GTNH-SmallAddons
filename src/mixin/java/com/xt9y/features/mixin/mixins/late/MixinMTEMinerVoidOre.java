@@ -25,7 +25,7 @@ public abstract class MixinMTEMinerVoidOre {
     private boolean xt9y$virtualMinerNeedsNoPipe(DrillingLogicDelegate pipe, long tick) {
         MTEMiner miner = (MTEMiner) (Object) this;
         IGregTechTileEntity base = miner.getBaseMetaTileEntity();
-        if (base != null && VirtualExtraction.isVirtual(base.getWorld(), base.getXCoord(), base.getZCoord())) {
+        if (base != null && VirtualExtraction.isVirtual(base)) {
             return true;
         }
         return pipe.canContinueDrilling(tick);
@@ -40,11 +40,11 @@ public abstract class MixinMTEMinerVoidOre {
         cancellable = true,
         remap = false)
     private void xt9y$generateWithoutMining(IGregTechTileEntity base, long tick, CallbackInfo ci) {
-        if (!VirtualExtraction.isVirtual(base.getWorld(), base.getXCoord(), base.getZCoord())) return;
+        if (!VirtualExtraction.isVirtual(base)) return;
 
         MTEMiner miner = (MTEMiner) (Object) this;
         if (miner.getProgresstime() == miner.getMachineSpeed() - 1) {
-            ItemStack ore = VirtualExtraction.nextOre(base.getWorld(), base.getXCoord(), base.getZCoord());
+            ItemStack ore = VirtualExtraction.nextOre(base);
             if (ore != null && miner.pushOutputs(ore, ore.stackSize, true, false)) {
                 miner.pushOutputs(ore, ore.stackSize, false, false);
             }
