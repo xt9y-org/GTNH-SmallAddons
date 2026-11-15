@@ -39,15 +39,22 @@ public final class VirtualExtraction {
         String dim = dimension(machine);
         if (dim == null) return null;
 
-        DropMap map = VoidMinerUtility.dropMapsByDimName.get(dim);
+        DropMap map = poolFor(dim);
         DropMap extras = VoidMinerUtility.extraDropsByDimName.get(dim);
-        if (map == null || map.getInternalMap()
-            .isEmpty()) map = fallbackPool(dim);
         map.isDistributionCached(extras);
         if (map.getOres() == null || map.getOres().length == 0) return null;
 
         return map.nextOre()
             .getItemStack();
+    }
+
+    /** A read-only choice of native/fallback ore pool, without loading any foreign dimension. */
+    public static DropMap poolFor(String dimension) {
+        if (dimension == null) return null;
+        DropMap map = VoidMinerUtility.dropMapsByDimName.get(dimension);
+        if (map == null || map.getInternalMap()
+            .isEmpty()) map = fallbackPool(dimension);
+        return map;
     }
 
     private static synchronized DropMap fallbackPool(String dimension) {
