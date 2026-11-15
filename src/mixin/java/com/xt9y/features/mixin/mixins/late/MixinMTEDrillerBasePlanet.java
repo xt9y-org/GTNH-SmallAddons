@@ -54,8 +54,7 @@ public abstract class MixinMTEDrillerBasePlanet {
             cir.setReturnValue(SimpleCheckRecipeResult.ofFailure("void_miner_no_ores"));
             return;
         }
-        if (!((MixinGTMultiblockOutputAccess) (Object) this).xt9y$canOutputAllFluids(
-            new FluidStack[] { fluid })) {
+        if (!((MixinGTMultiblockOutputAccess) (Object) this).xt9y$canOutputAllFluids(new FluidStack[] { fluid })) {
             cir.setReturnValue(SimpleCheckRecipeResult.ofFailure("no_output_space"));
             return;
         }
