@@ -9,8 +9,6 @@
     "MixinMTEMinerVoidOre",
     "MixinGTMultiblockOutputAccess",
     "MixinMTEOreDrillingPlantVoidOre",
-    "MixinMTEPumpNonDepleting",
-    "MixinUndergroundOilNonDepleting",
     "MixinContainerPatternTermNonConsumable",
     "MixinCRIBNonConsumable",
     "MixinCRIBPatternSlotNonConsumable",
