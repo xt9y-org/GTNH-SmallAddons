@@ -119,7 +119,8 @@ public final class PlanetaryCover extends Cover {
     @Override
     public String getDescription() {
         String dimension = getSelectedDimension();
-        return dimension == null ? "Insert an Eye of Harmony planet to select a dimension" : "Virtual dimension: " + dimension;
+        return dimension == null ? "Insert an Eye of Harmony planet to select a dimension"
+            : "Virtual dimension: " + dimension;
     }
 
     @Override
@@ -204,7 +205,9 @@ public final class PlanetaryCover extends Cover {
 
         @Override
         public void addUIWidgets(PanelSyncManager syncManager, Flow column, CoverGuiData data) {
-            column.child(IKey.str("Eye of Harmony planet (ghost item):").asWidget())
+            column.child(
+                IKey.str("Eye of Harmony planet (ghost item):")
+                    .asWidget())
                 .child(
                     new PhantomItemSlot().slot(new ModularSlot(cover.getPlanetSlot(), 0))
                         .marginTop(5));
