@@ -1,12 +1,11 @@
 package com.xt9y.features;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
 
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
@@ -18,11 +17,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.PacketBuffer;
+import net.minecraft.util.ChatComponentText;
+import net.minecraftforge.common.util.ForgeDirection;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraft.util.ChatComponentText;
-import net.minecraftforge.common.util.ForgeDirection;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -31,29 +30,29 @@ import com.cleanroommc.modularui.api.drawable.IKey;
 import com.cleanroommc.modularui.drawable.ItemDrawable;
 import com.cleanroommc.modularui.screen.ModularPanel;
 import com.cleanroommc.modularui.utils.fluid.FluidStackTank;
-import com.cleanroommc.modularui.utils.Alignment;
+import com.cleanroommc.modularui.utils.item.ItemStackHandler;
+import com.cleanroommc.modularui.utils.item.LimitingItemStackHandler;
 import com.cleanroommc.modularui.utils.serialization.IByteBufAdapter;
 import com.cleanroommc.modularui.value.BoolValue;
 import com.cleanroommc.modularui.value.sync.BooleanSyncValue;
-import com.cleanroommc.modularui.value.sync.GenericSyncValue;
-import com.cleanroommc.modularui.value.sync.StringSyncValue;
-import com.cleanroommc.modularui.utils.item.ItemStackHandler;
-import com.cleanroommc.modularui.utils.item.LimitingItemStackHandler;
-import com.cleanroommc.modularui.value.sync.PanelSyncManager;
 import com.cleanroommc.modularui.value.sync.FluidSlotSyncHandler;
+import com.cleanroommc.modularui.value.sync.GenericSyncValue;
+import com.cleanroommc.modularui.value.sync.PanelSyncManager;
+import com.cleanroommc.modularui.value.sync.StringSyncValue;
 import com.cleanroommc.modularui.widgets.ButtonWidget;
 import com.cleanroommc.modularui.widgets.ListWidget;
 import com.cleanroommc.modularui.widgets.ToggleButton;
 import com.cleanroommc.modularui.widgets.layout.Flow;
 import com.cleanroommc.modularui.widgets.slot.FluidSlot;
-import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.cleanroommc.modularui.widgets.slot.ModularSlot;
 import com.cleanroommc.modularui.widgets.slot.PhantomItemSlot;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.google.common.io.ByteArrayDataInput;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.common.widget.SlotWidget;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
 
+import bwcrossmod.galacticgreg.VoidMinerUtility;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.registry.GameRegistry;
 import gregtech.api.covers.CoverContext;
@@ -63,15 +62,14 @@ import gregtech.api.enums.Textures;
 import gregtech.api.gui.modularui.CoverUIBuildContext;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.modularui2.CoverGuiData;
+import gregtech.api.modularui2.GTGuiTextures;
 import gregtech.api.util.GTByteBuffer;
 import gregtech.api.util.GTUtility;
-import gregtech.api.modularui2.GTGuiTextures;
-import gregtech.common.tileentities.machines.basic.MTEPump;
-import gregtech.common.tileentities.machines.multi.MTEOilDrillBase;
-import bwcrossmod.galacticgreg.VoidMinerUtility;
 import gregtech.common.covers.Cover;
 import gregtech.common.gui.modularui.cover.base.CoverBaseGui;
 import gregtech.common.gui.mui1.cover.CoverUIFactory;
+import gregtech.common.tileentities.machines.basic.MTEPump;
+import gregtech.common.tileentities.machines.multi.MTEOilDrillBase;
 import gtneioreplugin.plugin.block.BlockDimensionDisplay;
 import gtneioreplugin.util.DimensionHelper;
 import io.netty.buffer.ByteBuf;
@@ -176,16 +174,17 @@ public final class PlanetaryCover extends Cover {
             fluidName = "";
         } else if (VirtualExtraction.fluidsFor(getSelectedDimension())
             .containsKey(name)) {
-            fluidName = name;
-        } else {
-            return;
-        }
+                fluidName = name;
+            } else {
+                return;
+            }
         changed();
     }
 
     public List<String> getAvailableFluids() {
-        List<String> fluids = new ArrayList<>(VirtualExtraction.fluidsFor(getSelectedDimension())
-            .keySet());
+        List<String> fluids = new ArrayList<>(
+            VirtualExtraction.fluidsFor(getSelectedDimension())
+                .keySet());
         Collections.sort(fluids);
         return fluids;
     }
@@ -385,19 +384,25 @@ public final class PlanetaryCover extends Cover {
             IPanelHandler orePanel = syncManager.syncedPanel("planet_ores", true, this::orePopup);
             IPanelHandler fluidPanel = syncManager.syncedPanel("planet_fluids", true, this::fluidPopup);
 
-            column.child(IKey.str("Eye of Harmony planet:").asWidget())
-                .child(new PhantomItemSlot().slot(new ModularSlot(cover.getPlanetSlot(), 0))
-                    .marginTop(5))
-                .child(IKey.dynamic(cover::getDescription).asWidget())
-                .child(new ButtonWidget<>().size(125, 18)
-                    .overlay(IKey.str(cover.isFluidMachine() ? "Select fluid" : "Ore whitelist / blacklist"))
-                    .onMousePressed(button -> {
-                        IPanelHandler panel = cover.isFluidMachine() ? fluidPanel : orePanel;
-                        if (panel.isPanelOpen()) panel.closePanel();
-                        else panel.openPanel();
-                        return true;
-                    })
-                    .setEnabledIf($ -> cover.getSelectedDimension() != null));
+            column.child(
+                IKey.str("Eye of Harmony planet:")
+                    .asWidget())
+                .child(
+                    new PhantomItemSlot().slot(new ModularSlot(cover.getPlanetSlot(), 0))
+                        .marginTop(5))
+                .child(
+                    IKey.dynamic(cover::getDescription)
+                        .asWidget())
+                .child(
+                    new ButtonWidget<>().size(125, 18)
+                        .overlay(IKey.str(cover.isFluidMachine() ? "Select fluid" : "Ore whitelist / blacklist"))
+                        .onMousePressed(button -> {
+                            IPanelHandler panel = cover.isFluidMachine() ? fluidPanel : orePanel;
+                            if (panel.isPanelOpen()) panel.closePanel();
+                            else panel.openPanel();
+                            return true;
+                        })
+                        .setEnabledIf($ -> cover.getSelectedDimension() != null));
         }
 
         private ModularPanel orePopup(PanelSyncManager manager, IPanelHandler handler) {
@@ -412,54 +417,84 @@ public final class PlanetaryCover extends Cover {
             manager.syncValue("ore_blacklist", mode);
 
             return new ModularPanel("xt9y:planet:ores").child(ButtonWidget.panelCloseButton())
-                .child(Flow.column()
-                    .child(IKey.str("Planet ores - whitelist / blacklist").asWidget())
-                    .child(Flow.row()
-                        .child(new ListWidget<>().child(Flow.row()
-                            .children(ores.length, i -> {
-                                ItemStack ore = ores[i];
-                                return new ToggleButton().value(
-                                    new BoolValue.Dynamic(() -> cover.isOreSelected(ore), enabled -> {
-                                        cover.selectOre(ore, enabled);
-                                        sync.setValue(cover.getSelectedOres());
-                                    }))
-                                    .overlay(new ItemDrawable(ore).asIcon().size(16))
-                                    .background(true, GTGuiTextures.BUTTON_STANDARD_PRESSED)
-                                    .background(false, GTGuiTextures.BUTTON_STANDARD)
-                                    .tooltip(t -> t.addFromItem(ore))
-                                    .setEnabledIf($ -> search.isEmpty() || ore.getDisplayName()
-                                        .toLowerCase().contains(search.toLowerCase()));
-                            })
-                            .wrap().width(180).coverChildrenHeight().collapseDisabledChild())
-                            .coverChildrenWidth().height(18 * Math.min(8, (ores.length + 9) / 10)))
-                        .child(Flow.column()
-                            .child(new ToggleButton().value(mode)
-                                .tooltip(false, t -> t.add("Whitelist"))
-                                .tooltip(true, t -> t.add("Blacklist"))
-                                .overlay(false, GTGuiTextures.OVERLAY_BUTTON_WHITELIST.asIcon().size(16))
-                                .overlay(true, GTGuiTextures.OVERLAY_BUTTON_BLACKLIST.asIcon().size(16)))
-                            .child(new ButtonWidget<>().overlay(GTGuiTextures.OVERLAY_BUTTON_CHECKMARK.asIcon())
-                                .tooltip(t -> t.add("Select all"))
-                                .onMousePressed(button -> {
-                                    cover.selectAllOres(true);
-                                    sync.setValue(cover.getSelectedOres());
-                                    return true;
-                                }))
-                            .child(new ButtonWidget<>().overlay(GTGuiTextures.OVERLAY_BUTTON_CROSS.asIcon())
-                                .tooltip(t -> t.add("Clear selection - all ores allowed"))
-                                .onMousePressed(button -> {
-                                    cover.selectAllOres(false);
-                                    sync.setValue(cover.getSelectedOres());
-                                    return true;
-                                }))
-                            .childPadding(3).coverChildrenWidth())
-                        .childPadding(4).coverChildren())
-                    .child(new TextFieldWidget().value(
-                        new StringSyncValue(() -> search, value -> search = value).allowC2S())
-                        .hintText("Search ores")
-                        .autoUpdateOnChange(true)
-                        .width(140))
-                    .childPadding(4).margin(7).coverChildren())
+                .child(
+                    Flow.column()
+                        .child(
+                            IKey.str("Planet ores - whitelist / blacklist")
+                                .asWidget())
+                        .child(
+                            Flow.row()
+                                .child(
+                                    new ListWidget<>().child(
+                                        Flow.row()
+                                            .children(ores.length, i -> {
+                                                ItemStack ore = ores[i];
+                                                return new ToggleButton().value(
+                                                    new BoolValue.Dynamic(() -> cover.isOreSelected(ore), enabled -> {
+                                                        cover.selectOre(ore, enabled);
+                                                        sync.setValue(cover.getSelectedOres());
+                                                    }))
+                                                    .overlay(
+                                                        new ItemDrawable(ore).asIcon()
+                                                            .size(16))
+                                                    .background(true, GTGuiTextures.BUTTON_STANDARD_PRESSED)
+                                                    .background(false, GTGuiTextures.BUTTON_STANDARD)
+                                                    .tooltip(t -> t.addFromItem(ore))
+                                                    .setEnabledIf(
+                                                        $ -> search.isEmpty() || ore.getDisplayName()
+                                                            .toLowerCase()
+                                                            .contains(search.toLowerCase()));
+                                            })
+                                            .wrap()
+                                            .width(180)
+                                            .coverChildrenHeight()
+                                            .collapseDisabledChild())
+                                        .coverChildrenWidth()
+                                        .height(18 * Math.min(8, (ores.length + 9) / 10)))
+                                .child(
+                                    Flow.column()
+                                        .child(
+                                            new ToggleButton().value(mode)
+                                                .tooltip(false, t -> t.add("Whitelist"))
+                                                .tooltip(true, t -> t.add("Blacklist"))
+                                                .overlay(
+                                                    false,
+                                                    GTGuiTextures.OVERLAY_BUTTON_WHITELIST.asIcon()
+                                                        .size(16))
+                                                .overlay(
+                                                    true,
+                                                    GTGuiTextures.OVERLAY_BUTTON_BLACKLIST.asIcon()
+                                                        .size(16)))
+                                        .child(
+                                            new ButtonWidget<>()
+                                                .overlay(GTGuiTextures.OVERLAY_BUTTON_CHECKMARK.asIcon())
+                                                .tooltip(t -> t.add("Select all"))
+                                                .onMousePressed(button -> {
+                                                    cover.selectAllOres(true);
+                                                    sync.setValue(cover.getSelectedOres());
+                                                    return true;
+                                                }))
+                                        .child(
+                                            new ButtonWidget<>().overlay(GTGuiTextures.OVERLAY_BUTTON_CROSS.asIcon())
+                                                .tooltip(t -> t.add("Clear selection - all ores allowed"))
+                                                .onMousePressed(button -> {
+                                                    cover.selectAllOres(false);
+                                                    sync.setValue(cover.getSelectedOres());
+                                                    return true;
+                                                }))
+                                        .childPadding(3)
+                                        .coverChildrenWidth())
+                                .childPadding(4)
+                                .coverChildren())
+                        .child(
+                            new TextFieldWidget()
+                                .value(new StringSyncValue(() -> search, value -> search = value).allowC2S())
+                                .hintText("Search ores")
+                                .autoUpdateOnChange(true)
+                                .width(140))
+                        .childPadding(4)
+                        .margin(7)
+                        .coverChildren())
                 .coverChildren();
         }
 
@@ -470,53 +505,77 @@ public final class PlanetaryCover extends Cover {
             BooleanSyncValue mode = new BooleanSyncValue(cover::isFluidBlacklist, cover::setFluidBlacklist).allowC2S();
             manager.syncValue("fluid_blacklist", mode);
 
-            FluidStackTank selectionTank = new FluidStackTank(
-                () -> {
-                    Fluid fluid = FluidRegistry.getFluid(cover.getFluidName());
-                    return fluid == null ? null : new FluidStack(fluid, 1);
-                },
-                stack -> {
-                    cover.setFluidName(stack == null ? "" : stack.getFluid().getName());
-                    selected.setValue(cover.getFluidName());
-                },
-                1);
+            FluidStackTank selectionTank = new FluidStackTank(() -> {
+                Fluid fluid = FluidRegistry.getFluid(cover.getFluidName());
+                return fluid == null ? null : new FluidStack(fluid, 1);
+            }, stack -> {
+                cover.setFluidName(
+                    stack == null ? ""
+                        : stack.getFluid()
+                            .getName());
+                selected.setValue(cover.getFluidName());
+            }, 1);
 
             return new ModularPanel("xt9y:planet:fluids").child(ButtonWidget.panelCloseButton())
-                .child(Flow.column()
-                    .child(IKey.str("Planet fluid - one selection").asWidget())
-                    .child(Flow.row()
-                        .child(new FluidSlot().syncHandler(
-                            new FluidSlotSyncHandler(selectionTank).phantom(true).controlsAmount(false)))
-                        .child(new ToggleButton().value(mode)
-                            .tooltip(false, t -> t.add("Whitelist: pump selected fluid"))
-                            .tooltip(true, t -> t.add("Blacklist: pump any available fluid except selected"))
-                            .overlay(false, GTGuiTextures.OVERLAY_BUTTON_WHITELIST.asIcon().size(16))
-                            .overlay(true, GTGuiTextures.OVERLAY_BUTTON_BLACKLIST.asIcon().size(16)))
-                        .childPadding(6).coverChildren())
-                    .child(new ListWidget<>().child(Flow.column()
-                        .children(names.size(), i -> {
-                            String name = names.get(i);
-                            Fluid fluid = FluidRegistry.getFluid(name);
-                            if (fluid == null) return IKey.str("Missing fluid: " + name).asWidget();
-                            String label = new FluidStack(fluid, 1).getLocalizedName();
-                            return new ButtonWidget<>().size(155, 16)
-                                .overlay(IKey.str(label))
+                .child(
+                    Flow.column()
+                        .child(
+                            IKey.str("Planet fluid - one selection")
+                                .asWidget())
+                        .child(
+                            Flow.row()
+                                .child(
+                                    new FluidSlot().syncHandler(
+                                        new FluidSlotSyncHandler(selectionTank).phantom(true)
+                                            .controlsAmount(false)))
+                                .child(
+                                    new ToggleButton().value(mode)
+                                        .tooltip(false, t -> t.add("Whitelist: pump selected fluid"))
+                                        .tooltip(
+                                            true,
+                                            t -> t.add("Blacklist: pump any available fluid except selected"))
+                                        .overlay(
+                                            false,
+                                            GTGuiTextures.OVERLAY_BUTTON_WHITELIST.asIcon()
+                                                .size(16))
+                                        .overlay(
+                                            true,
+                                            GTGuiTextures.OVERLAY_BUTTON_BLACKLIST.asIcon()
+                                                .size(16)))
+                                .childPadding(6)
+                                .coverChildren())
+                        .child(
+                            new ListWidget<>().child(
+                                Flow.column()
+                                    .children(names.size(), i -> {
+                                        String name = names.get(i);
+                                        Fluid fluid = FluidRegistry.getFluid(name);
+                                        if (fluid == null) return IKey.str("Missing fluid: " + name)
+                                            .asWidget();
+                                        String label = new FluidStack(fluid, 1).getLocalizedName();
+                                        return new ButtonWidget<>().size(155, 16)
+                                            .overlay(IKey.str(label))
+                                            .onMousePressed(button -> {
+                                                cover.setFluidName(name);
+                                                selected.setValue(cover.getFluidName());
+                                                return true;
+                                            });
+                                    })
+                                    .childPadding(2)
+                                    .coverChildren())
+                                .height(Math.min(130, 18 * names.size()))
+                                .width(155))
+                        .child(
+                            new ButtonWidget<>().size(155, 16)
+                                .overlay(IKey.str("Clear fluid selection"))
                                 .onMousePressed(button -> {
-                                    cover.setFluidName(name);
-                                    selected.setValue(cover.getFluidName());
+                                    cover.setFluidName("");
+                                    selected.setValue("");
                                     return true;
-                                });
-                        })
-                        .childPadding(2).coverChildren())
-                        .height(Math.min(130, 18 * names.size())).width(155))
-                    .child(new ButtonWidget<>().size(155, 16)
-                        .overlay(IKey.str("Clear fluid selection"))
-                        .onMousePressed(button -> {
-                            cover.setFluidName("");
-                            selected.setValue("");
-                            return true;
-                        }))
-                    .childPadding(5).margin(7).coverChildren())
+                                }))
+                        .childPadding(5)
+                        .margin(7)
+                        .coverChildren())
                 .coverChildren();
         }
     }
