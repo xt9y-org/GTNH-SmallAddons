@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.cleanroommc.modularui.utils.item.ItemStackHandler;
+import com.xt9y.features.PlanetaryCover;
 import com.xt9y.features.VirtualExtraction;
 
 import bwcrossmod.galacticgreg.MTEVoidMinerBase;
@@ -41,6 +42,9 @@ public abstract class MixinMTEVoidMinerPlanet {
 
     @Shadow
     public ItemStackHandler selected;
+
+    @Shadow
+    public boolean blacklist;
 
     @Unique
     private String xt9y$previousDimension;
@@ -73,12 +77,20 @@ public abstract class MixinMTEVoidMinerPlanet {
     @Inject(method = "checkProcessing", at = @At("HEAD"), remap = false)
     private void xt9y$updatePlanet(CallbackInfoReturnable<CheckRecipeResult> cir) {
         MTEVoidMinerBase<?> miner = (MTEVoidMinerBase<?>) (Object) this;
-        String dimension = VirtualExtraction.dimension(miner.getBaseMetaTileEntity());
-        if (Objects.equals(dimension, xt9y$previousDimension)) return;
-        xt9y$previousDimension = dimension;
-        calculateDropMap();
-        if (dropMap != null && dropMap.getOres() != null && selected.getSlots() != dropMap.getOres().length) {
+        IGregTechTileEntity base = miner.getBaseMetaTileEntity();
+        String dimension = VirtualExtraction.dimension(base);
+        if (!Objects.equals(dimension, xt9y$previousDimension)) {
+            xt9y$previousDimension = dimension;
+            calculateDropMap();
+        }
+        PlanetaryCover cover = VirtualExtraction.cover(base);
+        if (cover != null && cover.getSelectedDimension() != null) {
+            if (dropMap != null && dropMap.getOres() != null) cover.ensureOreSlots(dropMap.getOres().length);
+            selected = cover.getSelectedOres();
+            blacklist = cover.isOreBlacklist();
+        } else if (dropMap != null && dropMap.getOres() != null && selected.getSlots() != dropMap.getOres().length) {
             selected.setSize(dropMap.getOres().length);
         }
     }
+
 }

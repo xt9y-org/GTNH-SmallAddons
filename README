@@ -66,4 +66,13 @@ world --> the actual machine and blocks stay put; only its ore selection is virt
 configuration --> planetaryCover=true by default; config/xt9yfeatures.cfg is generated on launch
 removed --> Virtual Ore Chunk Source block, per-chunk config maps, global voidMiners and voidPumps options, old pump mixins
 migration --> remove previously placed Virtual Ore Chunk Source blocks before installing this version; the old block ID is not registered
-note --> affects GTNH single-block miners and ore-drilling multiblocks, not arbitrary dimension-gated recipes or modded pumps
+ore filters --> cover GUI includes Void Miner-style individual ore buttons, search, select all, clear, and whitelist/blacklist mode
+ore selection --> empty filter allows all ores; whitelist permits only selected ores, blacklist excludes selected ores
+native VM --> the cover controls the built-in Void Miner's existing filter and planet-specific drop map
+pump --> GT single-block fluid pump generates the chosen planet's underground fluids without moving pipes or changing world blocks; still uses EU and output-tank capacity
+fluid rig --> GT Oil Drilling Rig / Infinite Fluid Drilling Rig can extract selected planet underground fluids using normal multiblock energy and output checks, without terrain modification or chunk loading
+fluid menu --> after choosing an Eye of Harmony planet, open "Select fluid"; choose one of the planet's native underground deposits or use the ghost fluid slot
+fluid filter --> whitelist outputs only that fluid; blacklist excludes that one fluid and selects one other planet-valid fluid per operation, weighted by native chance
+fluid selection --> exactly one fluid at a time; empty fluid selection does not enable virtual pumping
+save --> ore selections, whitelist/blacklist modes and chosen fluid are persisted in each cover's machine NBT
+note --> only GTNH single-block pump and GT fluid drilling rigs are virtualized, not arbitrary third-party pumps or unrelated machine recipes
