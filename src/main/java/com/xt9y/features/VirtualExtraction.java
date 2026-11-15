@@ -1,58 +1,46 @@
 package com.xt9y.features;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.world.World;
+import net.minecraftforge.common.util.ForgeDirection;
 
 import bwcrossmod.galacticgreg.VoidMinerUtility;
 import bwcrossmod.galacticgreg.VoidMinerUtility.DropMap;
-import galacticgreg.api.ModDimensionDef;
-import galacticgreg.api.enums.DimensionDef;
 import gregtech.api.enums.StoneType;
+import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.WorldgenGTOreLayer;
 import gregtech.common.WorldgenGTOreSmallPieces;
+import gregtech.common.covers.Cover;
 import gtneioreplugin.util.DimensionHelper;
 
-/** Server-side ore selection; never changes terrain or consults another world. */
+/** Samples ore solely from the planet selected on the attached machine's cover. */
 public final class VirtualExtraction {
 
     private static final Map<String, DropMap> EXTRA_DIMENSION_POOLS = new HashMap<>();
 
-    public static boolean isVirtual(World world, int blockX, int blockZ) {
-        return dimension(world, blockX, blockZ) != null;
+    public static boolean isVirtual(IGregTechTileEntity machine) {
+        return dimension(machine) != null;
     }
 
-    public static String dimension(World world, int blockX, int blockZ) {
-        if (world == null || world.isRemote) return null;
-
-        // PersonalSpace always requires an actual, loaded source block in THIS chunk.
-        if (OreSourceBlock.isPersonalWorld(world)) {
-            return XT9YConfig.oreSourceBlock ? OreSourceBlock.getSourceDimension(world, blockX >> 4, blockZ >> 4)
-                : null;
+    public static String dimension(IGregTechTileEntity machine) {
+        if (machine == null || machine.getWorld() == null || machine.getWorld().isRemote) return null;
+        for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+            Cover cover = machine.getCoverAtSide(side);
+            if (cover instanceof PlanetaryCover) return ((PlanetaryCover) cover).getSelectedDimension();
         }
-
-        if (!XT9YConfig.voidMiners) return null;
-        ModDimensionDef def = DimensionDef.getEffectiveDefForChunk(world, blockX >> 4, blockZ >> 4);
-        if (def != null) return def.getDimensionName();
-
-        String name = DimensionDef.getDimensionName(world);
-        return VoidMinerUtility.dropMapsByDimName.containsKey(name) ? name : null;
+        return null;
     }
 
-    /** Uses GTNH's own enabled ore/planet tables, including small ores and additional void miner drops. */
-    public static ItemStack nextOre(World world, int x, int z) {
-        String dim = dimension(world, x, z);
+    /** Samples GTNH's weighted Void Miner ores or enabled ore layers of the selected Eye of Harmony dimension. */
+    public static ItemStack nextOre(IGregTechTileEntity machine) {
+        String dim = dimension(machine);
         if (dim == null) return null;
 
-        DropMap map = VoidMinerUtility.dropMapsByDimName.get(dim);
+        DropMap map = poolFor(dim);
         DropMap extras = VoidMinerUtility.extraDropsByDimName.get(dim);
-        if (map == null || map.getInternalMap()
-            .isEmpty()) map = fallbackPool(dim);
         map.isDistributionCached(extras);
         if (map.getOres() == null || map.getOres().length == 0) return null;
 
@@ -60,43 +48,13 @@ public final class VirtualExtraction {
             .getItemStack();
     }
 
-    public static List<String> availableDimensions() {
-        Map<String, DropMap> maps = VoidMinerUtility.dropMapsByDimName;
-        List<String> names = new ArrayList<>();
-        for (Map.Entry<String, DropMap> entry : maps.entrySet()) {
-            if (!entry.getValue()
-                .getInternalMap()
-                .isEmpty()) names.add(entry.getKey());
-        }
-        for (Map.Entry<String, DropMap> entry : VoidMinerUtility.extraDropsByDimName.entrySet()) {
-            if (!entry.getValue()
-                .getInternalMap()
-                .isEmpty() && !names.contains(entry.getKey())) {
-                names.add(entry.getKey());
-            }
-        }
-        // Unlike GTNH's native Void Miner, the source can select dimensions normally
-        // excluded from Void Mining but still containing real ore generation layers.
-        for (WorldgenGTOreLayer layer : WorldgenGTOreLayer.sList) {
-            if (layer.mEnabled) {
-                for (String dimension : layer.getAllowedDimensions()) {
-                    if (!names.contains(dimension)) names.add(dimension);
-                }
-            }
-        }
-        for (WorldgenGTOreSmallPieces layer : WorldgenGTOreSmallPieces.sList) {
-            if (layer.mEnabled) {
-                for (String dimension : layer.getAllowedDimensions()) {
-                    if (!names.contains(dimension)) names.add(dimension);
-                }
-            }
-        }
-        Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
-        for (String preferred : new String[] { DimensionDef.DimNames.NETHER, DimensionDef.DimNames.DEEPDARK,
-            DimensionDef.DimNames.OW }) {
-            if (names.remove(preferred)) names.add(0, preferred);
-        }
-        return names;
+    /** A read-only choice of native/fallback ore pool, without loading any foreign dimension. */
+    public static DropMap poolFor(String dimension) {
+        if (dimension == null) return null;
+        DropMap map = VoidMinerUtility.dropMapsByDimName.get(dimension);
+        if (map == null || map.getInternalMap()
+            .isEmpty()) map = fallbackPool(dimension);
+        return map;
     }
 
     private static synchronized DropMap fallbackPool(String dimension) {

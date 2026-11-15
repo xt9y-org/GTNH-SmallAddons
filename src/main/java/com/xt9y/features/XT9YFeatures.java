@@ -32,7 +32,8 @@ public class XT9YFeatures {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         XT9YConfig.load(event.getSuggestedConfigurationFile());
-        OreSourceBlock.register();
+        PlanetaryCover.registerItem();
+        GregTechAPI.sAfterGTPreload.add(PlanetaryCover::registerCover);
         // Must run before GT's own preInit so the runnables below are picked up by GT.
         if (XT9YConfig.linkedInputHatch) {
             GregTechAPI.sAfterGTPreload.add(() -> {
