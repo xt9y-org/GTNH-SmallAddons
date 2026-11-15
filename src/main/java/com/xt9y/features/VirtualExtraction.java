@@ -7,17 +7,17 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.common.util.ForgeDirection;
+import net.minecraftforge.fluids.FluidStack;
 
 import bwcrossmod.galacticgreg.VoidMinerUtility;
+import bwcrossmod.galacticgreg.VoidMinerUtility.DropMap;
 import gregtech.GTMod;
+import gregtech.api.enums.StoneType;
+import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.objects.GTUODimension;
 import gregtech.api.objects.GTUOFluid;
 import gregtech.api.util.GTUtility;
-import bwcrossmod.galacticgreg.VoidMinerUtility.DropMap;
-import gregtech.api.enums.StoneType;
-import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.WorldgenGTOreLayer;
 import gregtech.common.WorldgenGTOreSmallPieces;
 import gregtech.common.covers.Cover;
@@ -59,16 +59,20 @@ public final class VirtualExtraction {
         double total = 0;
         for (Map.Entry<GTUtility.ItemId, Float> entry : map.getInternalMap()
             .entrySet()) {
-            if (selected.allowsOre(entry.getKey()
-                .getItemStack())) total += Math.max(0, entry.getValue());
+            if (selected.allowsOre(
+                entry.getKey()
+                    .getItemStack()))
+                total += Math.max(0, entry.getValue());
         }
         if (total <= 0) return null;
         double roll = ThreadLocalRandom.current()
             .nextDouble(total);
         for (Map.Entry<GTUtility.ItemId, Float> entry : map.getInternalMap()
             .entrySet()) {
-            if (!selected.allowsOre(entry.getKey()
-                .getItemStack())) continue;
+            if (!selected.allowsOre(
+                entry.getKey()
+                    .getItemStack()))
+                continue;
             roll -= Math.max(0, entry.getValue());
             if (roll < 0) return entry.getKey()
                 .getItemStack();
@@ -97,8 +101,7 @@ public final class VirtualExtraction {
         for (Map.Entry<String, GTUODimension> entry : GTMod.proxy.mUndergroundOil.getDimensionList()
             .entrySet()) {
             String key = entry.getKey();
-            boolean match = key.equalsIgnoreCase(displayName)
-                || ("Ow".equals(shortName) && "0".equals(key))
+            boolean match = key.equalsIgnoreCase(displayName) || ("Ow".equals(shortName) && "0".equals(key))
                 || ("CB".equals(shortName) && "aCentauriBb".equals(key))
                 || ("BC".equals(shortName) && "BarnardaC".equals(key))
                 || ("BE".equals(shortName) && "BarnardaE".equals(key))
