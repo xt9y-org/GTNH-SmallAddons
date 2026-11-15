@@ -40,7 +40,7 @@ public abstract class MixinMTEPumpPlanet {
         }
         if (pump.mPumpTimer-- > 0) return;
 
-        int tier = Math.max(0, pump.getInputTier());
+        int tier = (int) Math.max(0, Math.min(7, pump.getInputTier()));
         pump.mPumpTimer = Math.max(1, 160 >> Math.min(7, tier));
         FluidStack fluid = VirtualExtraction.nextFluid(cover, 1);
         if (fluid == null) {
