@@ -20,7 +20,6 @@ public final class XT9YConfig {
 
     public static void load(File file) {
         Configuration config = new Configuration(file);
-        configuration = config;
         config.load();
 
         linkedInputHatch = config.getBoolean(
