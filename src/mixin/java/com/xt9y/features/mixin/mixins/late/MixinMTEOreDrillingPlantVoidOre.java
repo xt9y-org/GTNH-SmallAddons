@@ -28,9 +28,9 @@ public abstract class MixinMTEOreDrillingPlantVoidOre {
         int oldYHead, CallbackInfoReturnable<Boolean> cir) {
         MTEOreDrillingPlantBase drill = (MTEOreDrillingPlantBase) (Object) this;
         IGregTechTileEntity base = drill.getBaseMetaTileEntity();
-        if (base == null || !VirtualExtraction.isVirtual(base.getWorld(), xDrill, zDrill)) return;
+        if (base == null || !VirtualExtraction.isVirtual(base)) return;
 
-        ItemStack ore = VirtualExtraction.nextOre(base.getWorld(), xDrill, zDrill);
+        ItemStack ore = VirtualExtraction.nextOre(base);
         if (ore != null) {
             if (!((MixinGTMultiblockOutputAccess) (Object) this).xt9y$canOutputAll(new ItemStack[] { ore })
                 || !tryConsumeDrillingFluid(false)) {
