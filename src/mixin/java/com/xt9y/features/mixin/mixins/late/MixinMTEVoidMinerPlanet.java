@@ -11,8 +11,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.cleanroommc.modularui.utils.item.ItemStackHandler;
-import com.xt9y.features.VirtualExtraction;
 import com.xt9y.features.PlanetaryCover;
+import com.xt9y.features.VirtualExtraction;
 
 import bwcrossmod.galacticgreg.MTEVoidMinerBase;
 import bwcrossmod.galacticgreg.VoidMinerUtility;
@@ -88,8 +88,7 @@ public abstract class MixinMTEVoidMinerPlanet {
             if (dropMap != null && dropMap.getOres() != null) cover.ensureOreSlots(dropMap.getOres().length);
             selected = cover.getSelectedOres();
             blacklist = cover.isOreBlacklist();
-        } else if (dropMap != null && dropMap.getOres() != null
-            && selected.getSlots() != dropMap.getOres().length) {
+        } else if (dropMap != null && dropMap.getOres() != null && selected.getSlots() != dropMap.getOres().length) {
             selected.setSize(dropMap.getOres().length);
         }
     }
