@@ -227,19 +227,24 @@ public final class PlanetaryCover extends Cover {
         return empty || (isOreSelected(ore) != oreBlacklist);
     }
 
+    public void ensureOreSlots(int count) {
+        if (count > selectedOres.getSlots() && count <= 512) selectedOres.setSize(count);
+    }
+
     public void selectOre(ItemStack ore, boolean enabled) {
-        int existing = indexOfOre(ore);
-        if (!enabled && existing >= 0) {
-            selectedOres.setStackInSlot(existing, null);
-        } else if (enabled && existing < 0) {
-            int free = 0;
-            while (free < selectedOres.getSlots() && selectedOres.getStackInSlot(free) != null) free++;
-            if (free >= selectedOres.getSlots()) selectedOres.setSize(free + 1);
-            ItemStack copy = ore.copy();
-            copy.stackSize = 1;
-            selectedOres.setStackInSlot(free, copy);
+        ItemStack[] available = getAvailableOres();
+        ensureOreSlots(available.length);
+        for (int i = 0; i < available.length; i++) {
+            if (!GTUtility.areStacksEqual(available[i], ore)) continue;
+            ItemStack copy = null;
+            if (enabled) {
+                copy = ore.copy();
+                copy.stackSize = 1;
+            }
+            selectedOres.setStackInSlot(i, copy);
+            changed();
+            return;
         }
-        changed();
     }
 
     public void selectAllOres(boolean enabled) {
