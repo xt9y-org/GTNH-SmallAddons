@@ -28,8 +28,8 @@ import org.jetbrains.annotations.NotNull;
 
 import com.cleanroommc.modularui.api.IPanelHandler;
 import com.cleanroommc.modularui.api.drawable.IKey;
-import com.cleanroommc.modularui.api.widget.IWidget;
 import com.cleanroommc.modularui.drawable.ItemDrawable;
+import com.cleanroommc.modularui.screen.ModularPanel;
 import com.cleanroommc.modularui.utils.fluid.FluidStackTank;
 import com.cleanroommc.modularui.utils.Alignment;
 import com.cleanroommc.modularui.utils.serialization.IByteBufAdapter;
@@ -410,7 +410,7 @@ public final class PlanetaryCover extends Cover {
                 .child(Flow.column()
                     .child(IKey.str("Planet ores - whitelist / blacklist").asWidget())
                     .child(Flow.row()
-                        .child(new ListWidget<IWidget, ?>().child(Flow.row()
+                        .child(new ListWidget<>().child(Flow.row()
                             .children(ores.length, i -> {
                                 ItemStack ore = ores[i];
                                 return new ToggleButton().value(
@@ -488,7 +488,7 @@ public final class PlanetaryCover extends Cover {
                             .overlay(false, GTGuiTextures.OVERLAY_BUTTON_WHITELIST.asIcon().size(16))
                             .overlay(true, GTGuiTextures.OVERLAY_BUTTON_BLACKLIST.asIcon().size(16)))
                         .childPadding(6).coverChildren())
-                    .child(new ListWidget<IWidget, ?>().child(Flow.column()
+                    .child(new ListWidget<>().child(Flow.column()
                         .children(names.size(), i -> {
                             String name = names.get(i);
                             Fluid fluid = FluidRegistry.getFluid(name);
