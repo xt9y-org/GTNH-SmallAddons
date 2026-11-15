@@ -2,8 +2,6 @@ package com.xt9y.features.mixin.mixins.late;
 
 import java.util.Objects;
 
-import net.minecraft.item.ItemStack;
-
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -19,8 +17,8 @@ import bwcrossmod.galacticgreg.MTEVoidMinerBase;
 import bwcrossmod.galacticgreg.VoidMinerUtility;
 import galacticgreg.api.ModDimensionDef;
 import galacticgreg.api.enums.DimensionDef;
-import gregtech.api.recipe.check.CheckRecipeResult;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
+import gregtech.api.recipe.check.CheckRecipeResult;
 
 /** Let a GTNH Void Miner multiblock work from the planet selected on its controller cover. */
 @Mixin(value = MTEVoidMinerBase.class, remap = false)
