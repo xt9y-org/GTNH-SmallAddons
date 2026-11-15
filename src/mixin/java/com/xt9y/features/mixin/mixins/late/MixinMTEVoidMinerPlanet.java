@@ -85,6 +85,7 @@ public abstract class MixinMTEVoidMinerPlanet {
         }
         PlanetaryCover cover = VirtualExtraction.cover(base);
         if (cover != null && cover.getSelectedDimension() != null) {
+            if (dropMap != null && dropMap.getOres() != null) cover.ensureOreSlots(dropMap.getOres().length);
             selected = cover.getSelectedOres();
             blacklist = cover.isOreBlacklist();
         } else if (dropMap != null && dropMap.getOres() != null
